@@ -1,0 +1,11 @@
+# Public deploy repo — track ONLY what Netlify needs to serve the site.
+# Internal workstation docs (CLAUDE.md, MEMORY.md, handoffs, version logs,
+# deploy notes) stay local and out of the public GitHub repo.
+
+/*
+!/.gitignore
+!/netlify.toml
+!/battle-adviser-web/
+
+/battle-adviser-web/*
+!/battle-adviser-web/index.html

@@ -100,6 +100,8 @@
   .info-icon { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #aeb6c2; background: #fff; color: #5b6472; font-size: 12px; font-weight: 700; font-style: italic; cursor: pointer; line-height: 1; display: inline-flex; align-items: center; justify-content: center; flex: none; }
   .info-icon:hover { border-color: #5b6472; }
   .chip .badge-cov { position: absolute; top: -5px; right: -3px; background: #7e3ff2; color: #fff; font-size: 7px; font-weight: 800; padding: 1px 3px; border-radius: 4px; border: 1px solid #00000022; }
+  /* Opponent-STAB marker on defence chips — red to read as an incoming threat, like the STAB/COV markers. */
+  .chip .badge-opp { position: absolute; top: -5px; right: -3px; background: #d23c3c; color: #fff; font-size: 7px; font-weight: 800; padding: 1px 3px; border-radius: 4px; border: 1px solid #00000022; }
 
   /* slot button (used for opponent + squad type/move slots) */
   .slot-btn {
@@ -277,12 +279,15 @@
 
   /* ---------- Squad tab ---------- */
   .squad-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  /* Squad header row: title left, Clear/Undo button right */
   .squad-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
   .squad-head-row h2 { margin-bottom: 0; }
   .clear-squad-btn { border: 1.5px solid #d3d8e0; background: #fff; color: #5b6472; padding: 7px 14px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; flex: none; }
   .clear-squad-btn:hover { border-color: #c0392b; color: #c0392b; }
+  /* Undo state: the same button after a clear */
   .clear-squad-btn.undo { border-color: #157a41; color: #157a41; }
   .clear-squad-btn.undo:hover { background: #eaf6ef; }
+  /* Joke / status toast */
   .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); max-width: 460px; width: calc(100% - 32px); background: #1a1a2e; color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13px; line-height: 1.45; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1000; text-align: center; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; cursor: pointer; }
   .squad-slot {
@@ -372,11 +377,13 @@
   <div id="tab-battle" class="tab active">
     <div class="panel">
       <div class="matchup-grid">
+        <!-- Row 1: Opponent -->
         <span class="row-label">Opponent</span>
         <button class="slot-btn empty" id="opp-t1" onclick="pickOpp(1)">Type 1</button>
         <button class="slot-btn empty" id="opp-t2" onclick="pickOpp(2)">Type 2</button>
         <button class="chart-btn" onclick="openChart()">📊 Type Chart</button>
         <div class="matchup-divider"></div>
+        <!-- Row 2: Coverage -->
         <span class="row-label" style="color:#7e3ff2;">
           Coverage
           <label class="cov-toggle" title="Model the opponent's coverage moves">
@@ -389,11 +396,26 @@
         <button class="slot-btn empty" id="cov-2" onclick="pickCoverage(1)" style="display:none;">Cov 2</button>
         <button class="swap-btn" id="swap-btn" onclick="swapOppCoverage()" title="Swap Opponent ⇄ Coverage" style="display:none;">⇄ Switch</button>
         <div class="matchup-divider"></div>
+        <!-- Row 3: Yours -->
         <span class="row-label" style="color:#157a41;">Yours · P<span id="me-num">1</span></span>
         <span class="slot-btn empty" id="me-t1" style="cursor:default;">—</span>
         <span class="slot-btn empty" id="me-t2" style="cursor:default;">—</span>
         <div></div>
       </div>
+    </div>
+
+    <div class="panel">
+      <h2>Select Pokémon</h2>
+      <div class="nav16" id="nav16"></div>
+      <div class="dot-row" id="attack-dots"></div>
+      <div class="dot-label">Attack</div>
+      <div class="dot-row" id="defence-dots"></div>
+      <div class="dot-label">Defence</div>
+    </div>
+
+    <div class="panel">
+      <h2>Moves — Pokémon <span id="sel-num">1</span></h2>
+      <div class="move-cards" id="move-cards"></div>
     </div>
 
     <div class="panel">
@@ -409,6 +431,7 @@
           <div class="overlay-hint" id="def-hint"></div>
         </div>
       </div>
+
       <div class="eff-bar">
         <div class="eff-col c-4">4×<small>quad</small></div>
         <div class="eff-col c-3">3×<small>stab·se</small></div>
@@ -418,24 +441,11 @@
         <div class="eff-col c-05">0.5×<small>resist</small></div>
         <div class="eff-col c-0">0×<small>immune</small></div>
       </div>
+
       <div class="toggles" style="margin-top:14px;">
         <button id="tg-off" class="offense" onclick="toggle('offense')">OFFENSE</button>
         <button id="tg-def" class="defense" onclick="toggle('defense')">DEFENSE</button>
       </div>
-    </div>
-
-    <div class="panel">
-      <h2>Moves — Pokémon <span id="sel-num">1</span></h2>
-      <div class="move-cards" id="move-cards"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Select Pokémon</h2>
-      <div class="nav16" id="nav16"></div>
-      <div class="dot-row" id="attack-dots"></div>
-      <div class="dot-label">Attack</div>
-      <div class="dot-row" id="defence-dots"></div>
-      <div class="dot-label">Defence</div>
     </div>
   </div>
 
@@ -451,9 +461,12 @@
   </div>
 
   <!-- ============ COFFEE TAB ============ -->
+  <!-- Region between the markers is owned by Coffee Page/coffee-page.html.
+       Re-run assembly to update it; do not hand-edit app logic inside here. -->
   <div id="tab-coffee" class="tab">
 <!-- COFFEE TAB START -->
 <style id="coffee-styles">
+  /* All selectors scoped under .coffee-tab so nothing leaks into the app. */
   .coffee-tab { text-align: center; padding: 28px 20px 34px; }
   .coffee-tab .cup { width: 96px; height: 96px; margin: 4px auto 18px; position: relative; }
   .coffee-tab .cup .steam { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
@@ -496,7 +509,7 @@
   </div>
 </div>
 
-<!-- one-shot toast -->
+<!-- one-shot toast (Clear Squad joke / status) -->
 <div id="toast" class="toast" onclick="hideToast()"></div>
 
 <!-- Type picker overlay -->
@@ -532,6 +545,7 @@
 </div>
 
 <script>
+/* ===================== DATA ===================== */
 const TYPES = ["Normal","Fire","Water","Grass","Electric","Ice","Fighting","Poison",
   "Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel","Fairy"];
 
@@ -542,6 +556,7 @@ const TYPE_COLORS = {
   Dark:'#705848', Steel:'#B8B8D0', Fairy:'#EE99AC'
 };
 
+// ATTACK_CHART[attackingType][defendingType] = multiplier (non-1 only)
 const ATTACK_CHART = {
   Normal:   { Rock: 0.5, Steel: 0.5, Ghost: 0 },
   Fire:     { Fire: 0.5, Water: 0.5, Rock: 0.5, Dragon: 0.5, Grass: 2, Ice: 2, Bug: 2, Steel: 2 },
@@ -563,6 +578,7 @@ const ATTACK_CHART = {
   Fairy:    { Fire: 0.5, Poison: 0.5, Steel: 0.5, Fighting: 2, Dragon: 2, Dark: 2 }
 };
 
+/* ===================== LOGIC ===================== */
 function getEffectiveness(attackType, defType1, defType2) {
   if (!attackType || !defType1) return 1;
   const chart = ATTACK_CHART[attackType] || {};
@@ -571,14 +587,15 @@ function getEffectiveness(attackType, defType1, defType2) {
   return m1 * m2;
 }
 
+// Map an effective multiplier to one of the 7 column indices [4,3,2,1.5,1,0.5,0]
 function columnFor(v) {
-  if (v === 0) return 6;
-  if (v < 0.875) return 5;
-  if (v < 1.25) return 4;
-  if (v < 1.75) return 3;
-  if (v < 2.5) return 2;
-  if (v < 3.5) return 1;
-  return 0;
+  if (v === 0) return 6;        // 0× column
+  if (v < 0.875) return 5;      // 0.5× (covers 0.25, 0.375, 0.5, 0.75-STAB)
+  if (v < 1.25) return 4;       // 1×
+  if (v < 1.75) return 3;       // 1.5× (1×STAB)
+  if (v < 2.5) return 2;        // 2×
+  if (v < 3.5) return 1;        // 3× (2×STAB)
+  return 0;                     // 4× and above (4×, 4×STAB=6)
 }
 
 function fmtMult(v) {
@@ -592,6 +609,7 @@ function textColor(hex) {
   return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#1a1a1a' : '#ffffff';
 }
 
+/* ===================== STATE ===================== */
 const SQUAD_KEY = 'pba_squad';
 let state = {
   squad: null,
@@ -601,9 +619,11 @@ let state = {
   defense: false,
   coverageOn: false,
   coverage: [null, null],
-  selected: 0
+  selected: 0  // 0-indexed slot for Battle nav
 };
 
+// Link's saved squad — used as the default preset on first load / when storage is empty.
+// Returns fresh literals each call so per-slot edits never mutate a shared constant.
 function defaultSquad() {
   return [
     { slot: 1, type1: 'Psychic', type2: 'Flying', moves: ['Flying', 'Rock', 'Normal', 'Fighting'] },
@@ -632,10 +652,13 @@ function saveSquad() {
   localStorage.setItem(SQUAD_KEY, JSON.stringify(state.squad));
 }
 
+/* ===================== CLEAR / UNDO SQUAD ===================== */
+// In-memory only: the pre-clear squad, recoverable until the next edit/tab-switch/reload.
 let undoSnapshot = null;
 function emptySquad() {
   return [1,2,3,4,5,6].map(n => ({ slot: n, type1: null, type2: null, moves: [null,null,null,null] }));
 }
+// Stop offering Undo — called whenever the cleared state is no longer the freshest action.
 function invalidateUndo() {
   if (undoSnapshot) { undoSnapshot = null; updateClearBtn(); }
 }
@@ -646,10 +669,10 @@ function updateClearBtn() {
   b.classList.toggle('undo', !!undoSnapshot);
 }
 function clearOrUndo() {
-  if (undoSnapshot) {
+  if (undoSnapshot) {                       // Undo: restore what we backed up
     state.squad = undoSnapshot;
     undoSnapshot = null;
-  } else {
+  } else {                                  // Clear: back up, then wipe
     undoSnapshot = JSON.parse(JSON.stringify(state.squad));
     state.squad = emptySquad();
     showToast("Squad cleared. (Irreversible unless you clear your browser history 😏) — hit Undo to bring it back.");
@@ -671,6 +694,7 @@ function hideToast() {
   if (t) t.classList.remove('show');
 }
 
+/* ===================== TYPE PICKER ===================== */
 let pickerCb = null;
 function openPicker(title, allowNone, cb) {
   pickerCb = cb;
@@ -696,6 +720,7 @@ function openPicker(title, allowNone, cb) {
 }
 function closePicker() { document.getElementById('picker-back').classList.remove('show'); pickerCb = null; }
 
+/* ===================== TYPE CHART MODAL ===================== */
 function buildChart() {
   let html = '<table class="tc"><thead><tr><th class="corner"></th>';
   TYPES.forEach(d => {
@@ -720,14 +745,20 @@ function buildChart() {
 function openChart() { buildChart(); document.getElementById('chart-back').classList.add('show'); }
 function closeChart() { document.getElementById('chart-back').classList.remove('show'); }
 
+/* ===================== OPPONENT PICK ===================== */
 function pickOpp(n) {
   openPicker('Opponent Type ' + n, n === 2, (t) => {
-    if (n === 1) { if (t === null) return; state.oppType1 = t; }
-    else { state.oppType2 = t; }
+    if (n === 1) {
+      if (t === null) return; // type1 required; ignore (no None offered anyway)
+      state.oppType1 = t;
+    } else {
+      state.oppType2 = t;
+    }
     renderBattle();
   });
 }
 
+/* ===================== COVERAGE ===================== */
 function toggleCoverage() {
   state.coverageOn = document.getElementById('cov-switch').checked;
   renderBattle();
@@ -738,6 +769,8 @@ function pickCoverage(idx) {
     renderBattle();
   });
 }
+// Swap the Opponent typing with the Coverage typing (double-battle target flip).
+// Clean two-for-two swap of ephemeral state; fully reversible.
 function swapOppCoverage() {
   const o1 = state.oppType1, o2 = state.oppType2;
   state.oppType1 = state.coverage[0];
@@ -749,12 +782,13 @@ function swapOppCoverage() {
 function openCovInfo() { document.getElementById('cov-info-back').classList.add('show'); }
 function closeCovInfo() { document.getElementById('cov-info-back').classList.remove('show'); }
 
+/* ===================== TOGGLES / TABS / NAV ===================== */
 function toggle(which) {
   state[which] = !state[which];
   renderBattle();
 }
 function switchTab(tab) {
-  invalidateUndo();
+  invalidateUndo();  // leaving the squad tab ends the undo window
   document.getElementById('tab-battle').classList.toggle('active', tab === 'battle');
   document.getElementById('tab-squad').classList.toggle('active', tab === 'squad');
   document.getElementById('tab-coffee').classList.toggle('active', tab === 'coffee');
@@ -766,6 +800,7 @@ function switchTab(tab) {
 }
 function selectPokemon(i) { state.selected = i; renderBattle(); }
 
+/* ===================== CHIP HELPERS ===================== */
 function makeChip(type, mult, hasStab, isDefense, badge) {
   const c = document.createElement('div');
   c.className = 'chip';
@@ -775,7 +810,11 @@ function makeChip(type, mult, hasStab, isDefense, badge) {
   else c.style.boxShadow = 'inset 0 0 0 2px rgba(31,157,87,.9)';
   let badgeHtml = '';
   if (hasStab) badgeHtml = '<span class="stab">STAB</span>';
-  else if (badge) badgeHtml = `<span class="badge-cov">${badge}</span>`;
+  else if (badge) {
+    // 'Opps' = opponent's STAB (red), anything else (e.g. 'COV') = coverage (purple)
+    const cls = badge === 'Opps' ? 'badge-opp' : 'badge-cov';
+    badgeHtml = `<span class="${cls}">${badge}</span>`;
+  }
   c.innerHTML = `${type}<span class="mult">${fmtMult(mult)}</span>${badgeHtml}`;
   return c;
 }
@@ -792,6 +831,7 @@ function emptyGrid(id) {
   return cells;
 }
 
+/* ===================== RENDER: BATTLE ===================== */
 function setDisplayChip(el, type) {
   if (type) {
     el.className = 'slot-btn typed';
@@ -810,10 +850,14 @@ function setDisplayChip(el, type) {
 
 function renderBattle() {
   document.getElementById('sel-num').textContent = state.selected + 1;
+
+  // current Pokémon's own types (read-only, reflects 1-6 selection)
   const me = state.squad[state.selected];
   document.getElementById('me-num').textContent = state.selected + 1;
   setDisplayChip(document.getElementById('me-t1'), me.type1);
   setDisplayChip(document.getElementById('me-t2'), me.type2);
+
+  // opponent buttons
   const t1 = document.getElementById('opp-t1');
   if (state.oppType1) {
     t1.textContent = state.oppType1; t1.className = 'slot-btn typed';
@@ -824,6 +868,8 @@ function renderBattle() {
     t2.textContent = state.oppType2; t2.className = 'slot-btn typed';
     t2.style.background = TYPE_COLORS[state.oppType2]; t2.style.color = textColor(TYPE_COLORS[state.oppType2]);
   } else { t2.textContent = 'Type 2'; t2.className = 'slot-btn empty'; t2.style.background = ''; t2.style.color = ''; }
+
+  // coverage slots (direct grid children — toggle individually)
   const covSwitch = document.getElementById('cov-switch');
   if (covSwitch) covSwitch.checked = state.coverageOn;
   const cov1El = document.getElementById('cov-1');
@@ -836,10 +882,13 @@ function renderBattle() {
     styleSlotBtn(cov1El, state.coverage[0], 'Cov 1');
     styleSlotBtn(cov2El, state.coverage[1], 'Cov 2');
   }
+
+  // toggle button states
   document.getElementById('tg-off').classList.toggle('on', state.offense);
   document.getElementById('tg-def').classList.toggle('on', state.defense);
   document.getElementById('ov-offense').classList.toggle('show', state.offense);
   document.getElementById('ov-defense').classList.toggle('show', state.defense);
+
   if (state.offense) renderOffense();
   if (state.defense) renderDefense();
   renderMoveCards();
@@ -852,6 +901,8 @@ function renderOffense() {
   const hint = document.getElementById('off-hint');
   if (!state.oppType1) { hint.textContent = 'Pick an opponent type to see your coverage.'; return; }
   hint.textContent = '';
+
+  // Aggregate unique offensive types: all move slots + each Pokémon's inherent types
   const set = new Set();
   state.squad.forEach(p => {
     if (p.type1) set.add(p.type1);
@@ -859,15 +910,20 @@ function renderOffense() {
     p.moves.forEach(m => { if (m) set.add(m); });
   });
   if (set.size === 0) { hint.textContent = 'Configure your squad in the Squad tab first.'; return; }
+
+  // STAB applies only to the SELECTED Pokémon's 4 move types that match its own Type 1/2.
   const sel = state.squad[state.selected];
   const stabTypes = new Set();
   if (sel) sel.moves.forEach(m => { if (m && (m === sel.type1 || m === sel.type2)) stabTypes.add(m); });
+
+  // sort so strongest appear first within a column
   const entries = [...set].map(type => {
     const base = getEffectiveness(type, state.oppType1, state.oppType2);
     const hasStab = stabTypes.has(type);
     const eff = base * (hasStab ? 1.5 : 1);
     return { type, eff, hasStab };
   }).sort((a, b) => b.eff - a.eff);
+
   entries.forEach(e => {
     cells[columnFor(e.eff)].appendChild(makeChip(e.type, e.eff, e.hasStab, false));
   });
@@ -880,11 +936,16 @@ function renderDefense() {
   if (!state.oppType1) { hint.textContent = 'Pick an opponent type to see incoming damage.'; return; }
   if (!p.type1) { hint.textContent = `Pokémon ${state.selected + 1} has no type set (Squad tab).`; return; }
   hint.textContent = '';
+
+  // one chip per opponent attacking type, vs current Pokémon's full type combo.
+  // The opponent attacks with its own types, so these are STAB (×1.5) — marked "Opps".
   const oppTypes = [state.oppType1, state.oppType2].filter(Boolean);
   oppTypes.forEach(att => {
-    const v = getEffectiveness(att, p.type1, p.type2);
-    cells[columnFor(v)].appendChild(makeChip(att, v, false, true));
+    const v = getEffectiveness(att, p.type1, p.type2) * 1.5;
+    cells[columnFor(v)].appendChild(makeChip(att, v, false, true, 'Opps'));
   });
+
+  // coverage moves (toggle on): same chip style + "COV" badge, de-duped vs opponent types
   if (state.coverageOn) {
     const seen = new Set(oppTypes);
     state.coverage.forEach(cov => {
@@ -936,6 +997,8 @@ function renderNav() {
     nav.appendChild(b);
   }
 }
+// Type-colour bars under each nav number: two when both types set,
+// one centred when only one is set, a single grey bar when none.
 function typeBarsHTML(t1, t2) {
   const types = [t1, t2].filter(Boolean);
   if (types.length === 0) return '<span class="tbars"><span class="tbar empty"></span></span>';
@@ -943,6 +1006,8 @@ function typeBarsHTML(t1, t2) {
   return `<span class="tbars">${bars}</span>`;
 }
 
+// ---- Attack / Defence dot rows -------------------------------------------
+// 5-step colour scale shared by both rows.
 const SCALE = {
   deepGreen:  '#157a41',
   lightGreen: '#7cc99e',
@@ -952,32 +1017,36 @@ const SCALE = {
 };
 const EMPTY_DOT = 'empty';
 
+// Defence: the scariest single hit this Pokémon can take. Worst-case, not average —
+// the opponent picks their best move against a switch-in.
 function defenceInfo(p) {
   if (!state.oppType1 || !p.type1) return { color: EMPTY_DOT, title: 'Defence — set opponent & squad' };
+
+  // Opponent attacks with its own types → STAB (×1.5). A super-effective STAB lands at 3×.
   const incoming = [state.oppType1, state.oppType2].filter(Boolean)
-    .map(att => getEffectiveness(att, p.type1, p.type2));
-  const avg = incoming.reduce((a, b) => a + b, 0) / incoming.length;
-  const max = Math.max(...incoming);
+    .map(att => getEffectiveness(att, p.type1, p.type2) * 1.5);
+  // Coverage = off-type moves → no STAB. Only ever reddens the dot; never the green side.
   const covHits = state.coverageOn
     ? state.coverage.filter(Boolean).map(c => getEffectiveness(c, p.type1, p.type2))
     : [];
-  const covMax = covHits.length ? Math.max(...covHits) : 0;
-  const covDanger = covHits.some(v => v >= 2);
+
+  const worst = Math.max(...incoming, ...covHits);
+
   let color;
-  if (incoming.some(v => v >= 2) || covDanger) {
-    color = (avg >= 2 || covMax >= 4) ? SCALE.deepRed : SCALE.lightRed;
-  } else if (incoming.every(v => v === 1)) {
-    color = SCALE.grey;
-  } else if (avg <= 0.5) {
-    color = SCALE.deepGreen;
-  } else {
-    color = SCALE.lightGreen;
-  }
-  let title = `Defence — takes avg ${fmtMult(avg)}, worst ${fmtMult(max)}`;
-  if (covDanger) title += ` · coverage up to ${fmtMult(covMax)}`;
-  return { color, title };
+  if (worst >= 3)         color = SCALE.deepRed;     // SE STAB (3×), double-weakness, or 4× coverage — avoid
+  else if (worst >= 2)    color = SCALE.lightRed;    // SE coverage (2×) — real threat, survivable
+  else if (worst >= 1.25) color = SCALE.grey;        // neutral STAB (1.5×) — no type advantage
+  else if (worst <= 0.75) color = SCALE.deepGreen;   // you resist their STAB
+  else                    color = SCALE.lightGreen;  // you wall their STAB; only an off-type neutral lands
+
+  // Name the source of the worst hit so the tooltip is honest about STAB vs coverage.
+  const covWorst = covHits.length ? Math.max(...covHits) : 0;
+  const src = covWorst === worst && covWorst >= 2 ? ' (coverage)'
+            : worst >= 2 ? ' (opponent STAB)' : '';
+  return { color, title: `Defence — worst ${fmtMult(worst)}${src}` };
 }
 
+// Attack: how this Pokémon's FILLED moves hit the opponent. Higher = greener. No STAB.
 function attackInfo(p) {
   const moves = p.moves.filter(Boolean);
   if (!state.oppType1 || moves.length === 0) return { color: EMPTY_DOT, title: 'Attack — set opponent & moves' };
@@ -985,10 +1054,10 @@ function attackInfo(p) {
   const avg = out.reduce((a, b) => a + b, 0) / out.length;
   const best = Math.max(...out);
   let color;
-  if (out.some(v => v >= 2)) color = (avg >= 2) ? SCALE.deepGreen : SCALE.lightGreen;
+  if (out.some(v => v >= 2)) color = (avg >= 2) ? SCALE.deepGreen : SCALE.lightGreen;     // any 2x -> at least light green
   else if (out.every(v => v === 1)) color = SCALE.grey;
   else if (avg <= 0.5) color = SCALE.deepRed;
-  else color = SCALE.lightRed;
+  else color = SCALE.lightRed;                                                             // 0.5 < avg < 1
   return { color, title: `Attack — best ${fmtMult(best)}, avg ${fmtMult(avg)}` };
 }
 
@@ -1012,6 +1081,7 @@ function renderDots() {
   fill('defence-dots', defenceInfo);
 }
 
+/* ===================== RENDER: SQUAD ===================== */
 function renderSquad() {
   updateClearBtn();
   const grid = document.getElementById('squad-grid');
@@ -1019,25 +1089,32 @@ function renderSquad() {
   state.squad.forEach((p, idx) => {
     const slot = document.createElement('div');
     slot.className = 'squad-slot';
+
     const head = document.createElement('div');
     head.className = 'slot-head';
     head.textContent = 'POKÉMON ' + (idx + 1);
     slot.appendChild(head);
+
+    // types row
     const row = document.createElement('div');
     row.className = 'squad-row';
     row.appendChild(typeField('Type 1', p.type1, false, (t) => { p.type1 = t; invalidateUndo(); saveSquad(); renderSquad(); }));
     row.appendChild(typeField('Type 2', p.type2, true, (t) => { p.type2 = t; invalidateUndo(); saveSquad(); renderSquad(); }));
     slot.appendChild(row);
+
+    // moves
     const ml = document.createElement('div');
     ml.className = 'moves-label';
     ml.textContent = 'Moves';
     slot.appendChild(ml);
+
     const mg = document.createElement('div');
     mg.className = 'moves-grid';
     for (let i = 0; i < 4; i++) {
       mg.appendChild(moveBtn(p.moves[i], (t) => { p.moves[i] = t; invalidateUndo(); saveSquad(); renderSquad(); }));
     }
     slot.appendChild(mg);
+
     grid.appendChild(slot);
   });
 }
@@ -1074,6 +1151,7 @@ function styleSlotBtn(b, value, emptyLabel) {
   }
 }
 
+/* ===================== INIT ===================== */
 state.squad = loadSquad();
 renderBattle();
 renderSquad();

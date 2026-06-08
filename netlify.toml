@@ -1,5 +1,5 @@
 [build]
-  publish = "."
+  publish = "battle-adviser-web"
 
 [[headers]]
   for = "/*"
