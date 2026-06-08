@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokémon Battle Advisor</title>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "26688a1648014e179b99fc6804ce23ad"}'></script><!-- End Cloudflare Web Analytics -->
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f4f5f7;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+    padding: 12px;
+  }
+  .app { max-width: 760px; margin: 0 auto; }
+
+  /* ---------- Tabs ---------- */
+  .tabbar {
+    display: flex;
+    gap: 6px;
+    background: #e4e7ec;
+    padding: 5px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .tabbar button {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: #5b6472;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .tabbar button.active {
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* ---------- Panels ---------- */
+  .panel {
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+    margin-bottom: 14px;
+  }
+  .panel h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #8a93a2;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  /* ---------- Matchup rows ---------- */
+  .matchup-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+  .matchup-divider { grid-column: 1 / -1; border-top: 1px solid #eef0f3; margin: 2px 0; }
+  .row-label {
+    font-weight: 700; font-size: 14px; color: #3a4150;
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
+  }
+  .matchup-grid .slot-btn { width: 100%; }
+  .chart-btn {
+    background: #1a1a2e; color: #fff; border: none;
+    padding: 9px 14px; border-radius: 9px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  }
+  .chart-btn:hover { background: #2d2d44; }
+  .swap-btn {
+    background: #fff; color: #7e3ff2; border: 1.5px solid #7e3ff2;
+    padding: 8px 14px; border-radius: 9px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; flex: 0 0 auto; width: 100%;
+    justify-content: center;
+  }
+  .swap-btn:hover { background: #f3edff; }
+  .cov-toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+  .cov-toggle input { display: none; }
+  .cov-slider { width: 34px; height: 20px; background: #cfd5dd; border-radius: 999px; position: relative; transition: background .15s; flex: none; }
+  .cov-slider::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .cov-toggle input:checked + .cov-slider { background: #7e3ff2; }
+  .cov-toggle input:checked + .cov-slider::after { transform: translateX(14px); }
+  .info-icon { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #aeb6c2; background: #fff; color: #5b6472; font-size: 12px; font-weight: 700; font-style: italic; cursor: pointer; line-height: 1; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .info-icon:hover { border-color: #5b6472; }
+  .chip .badge-cov { position: absolute; top: -5px; right: -3px; background: #7e3ff2; color: #fff; font-size: 7px; font-weight: 800; padding: 1px 3px; border-radius: 4px; border: 1px solid #00000022; }
+
+  /* slot button (used for opponent + squad type/move slots) */
+  .slot-btn {
+    border: 1.5px solid #d3d8e0;
+    background: #fff;
+    border-radius: 9px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #1a1a1a;
+    transition: filter .12s, border-color .12s;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .slot-btn.typed { border-color: transparent; }
+  .slot-btn.empty { color: #aeb6c2; font-weight: 500; }
+  .slot-btn:hover { filter: brightness(.95); }
+
+  /* ---------- Toggles ---------- */
+  .toggles { display: flex; gap: 10px; }
+  .toggles button {
+    flex: 1;
+    padding: 11px 0;
+    border-radius: 10px;
+    border: 2px solid #d3d8e0;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    cursor: pointer;
+    color: #5b6472;
+    transition: all .15s;
+  }
+  .toggles button.on.offense { background: #1f9d57; border-color: #1f9d57; color: #fff; }
+  .toggles button.on.defense { background: #d23c3c; border-color: #d23c3c; color: #fff; }
+
+  /* ---------- Overlay zone ---------- */
+  .overlay-zone { display: flex; flex-direction: column; gap: 8px; }
+  .overlay {
+    border-radius: 10px;
+    padding: 8px 8px 4px;
+    display: none;
+  }
+  .overlay.show { display: block; }
+  .overlay.offense { background: rgba(31,157,87,.10); border: 1px solid rgba(31,157,87,.30); }
+  .overlay.defense { background: rgba(210,60,60,.10); border: 1px solid rgba(210,60,60,.30); }
+  .overlay-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+  }
+  .overlay.offense .overlay-label { color: #157a41; }
+  .overlay.defense .overlay-label { color: #a82c2c; }
+  .chip-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    align-items: end;
+  }
+  .chip-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    min-height: 4px;
+  }
+  .chip {
+    width: 100%;
+    max-width: 92px;
+    border-radius: 6px;
+    padding: 3px 2px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.15;
+    position: relative;
+  }
+  .chip .mult { display: block; font-size: 9px; opacity: .92; font-weight: 800; }
+  .chip .stab {
+    position: absolute;
+    top: -5px; right: -3px;
+    background: #ffd23f;
+    color: #1a1a1a;
+    font-size: 7px;
+    font-weight: 800;
+    padding: 1px 3px;
+    border-radius: 4px;
+    border: 1px solid #00000022;
+  }
+  .overlay-hint { font-size: 11px; color: #8a93a2; padding: 2px 2px 4px; }
+
+  /* ---------- Effectiveness bar ---------- */
+  .eff-bar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-top: 4px;
+  }
+  .eff-col {
+    text-align: center;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 800;
+    border-radius: 7px;
+    color: #fff;
+  }
+  .eff-col small { display:block; font-size: 8px; font-weight:600; opacity:.85; letter-spacing:.03em; }
+  .c-4   { background: #128a45; }
+  .c-3   { background: #2aa35a; }
+  .c-2   { background: #5cb874; }
+  .c-15  { background: #8a93a2; }
+  .c-1   { background: #aeb6c2; color:#2a2f38; }
+  .c-05  { background: #e08a5a; }
+  .c-0   { background: #c0392b; }
+
+  /* ---------- Move cards ---------- */
+  .move-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .move-card {
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    color: #fff;
+    min-height: 78px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    position: relative;
+  }
+  .move-card.empty {
+    background: #eef0f3;
+    color: #aeb6c2;
+    border: 1.5px dashed #d3d8e0;
+    font-weight: 600;
+  }
+  .move-card .mname { font-size: 12px; font-weight: 800; }
+  .move-card .mmult { font-size: 17px; font-weight: 800; }
+  .move-card .stab-badge {
+    position: absolute;
+    top: 5px; right: 5px;
+    background: #ffd23f;
+    color: #1a1a1a;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 5px;
+  }
+
+  /* ---------- 1-6 nav ---------- */
+  .nav16 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .nav16 button {
+    padding: 9px 0 8px;
+    border-radius: 10px;
+    border: 2px solid #d3d8e0;
+    background: #fff;
+    color: #5b6472;
+    cursor: pointer;
+  }
+  .nav16 button.active { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
+  .nav16 .nav-num { display: block; font-size: 16px; font-weight: 800; line-height: 1; }
+  .nav16 .tbars { display: flex; gap: 3px; justify-content: center; margin-top: 5px; }
+  .nav16 .tbar { width: 14px; height: 5px; border-radius: 2px; }
+  .nav16 .tbar.empty { background: #d3d8e0; }
+  .dot-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 12px; }
+  .dot-cell { display: flex; justify-content: center; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; }
+  .dot.empty { background: transparent; border: 2px solid #dadee4; box-sizing: border-box; }
+  .dot-label { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #8a93a2; margin-top: 4px; }
+
+  /* ---------- Squad tab ---------- */
+  .squad-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .squad-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .squad-head-row h2 { margin-bottom: 0; }
+  .clear-squad-btn { border: 1.5px solid #d3d8e0; background: #fff; color: #5b6472; padding: 7px 14px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; flex: none; }
+  .clear-squad-btn:hover { border-color: #c0392b; color: #c0392b; }
+  .clear-squad-btn.undo { border-color: #157a41; color: #157a41; }
+  .clear-squad-btn.undo:hover { background: #eaf6ef; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); max-width: 460px; width: calc(100% - 32px); background: #1a1a2e; color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13px; line-height: 1.45; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1000; text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; cursor: pointer; }
+  .squad-slot {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  }
+  .squad-slot .slot-head { font-size: 12px; font-weight: 800; color: #8a93a2; margin-bottom: 8px; letter-spacing:.05em; }
+  .squad-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .squad-row .field { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .squad-row .field label { font-size: 9px; font-weight: 700; color: #aeb6c2; text-transform: uppercase; letter-spacing:.05em; }
+  .squad-row .field .slot-btn { width: 100%; padding: 7px 4px; font-size: 12px; }
+  .moves-label { font-size: 9px; font-weight: 700; color: #aeb6c2; text-transform: uppercase; letter-spacing:.05em; margin: 2px 0 4px; }
+  .moves-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .moves-grid .slot-btn { width: 100%; padding: 7px 4px; font-size: 12px; }
+
+  /* ---------- Type picker overlay ---------- */
+  .modal-back {
+    position: fixed; inset: 0;
+    background: rgba(20,22,30,.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+  }
+  .modal-back.show { display: flex; }
+  .picker {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 80vh;
+    overflow: auto;
+  }
+  .picker h3 { font-size: 14px; margin-bottom: 12px; color: #3a4150; }
+  .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .type-grid button {
+    border: none;
+    border-radius: 8px;
+    padding: 11px 4px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #fff;
+  }
+  .type-grid button.none-btn { background: #e4e7ec; color: #5b6472; grid-column: span 3; }
+
+  /* ---------- Type chart modal ---------- */
+  .chart-modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 86vh;
+    overflow: auto;
+  }
+  .chart-modal .ch-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .chart-modal h3 { font-size: 15px; color: #3a4150; }
+  .chart-modal .legend { font-size: 11px; color: #8a93a2; margin-bottom: 10px; }
+  .chart-modal .x { background: #eef0f3; border: none; width: 30px; height: 30px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; color: #5b6472; }
+  .chart-scroll { overflow: auto; }
+  table.tc { border-collapse: collapse; font-size: 9px; }
+  table.tc th, table.tc td { width: 22px; height: 22px; text-align: center; border: 1px solid #f0f1f4; }
+  table.tc th.corner { background: #fff; position: sticky; left: 0; top: 0; z-index: 3; }
+  table.tc thead th { position: sticky; top: 0; z-index: 2; color: #fff; font-weight: 700; }
+  table.tc tbody th { position: sticky; left: 0; z-index: 1; color: #fff; font-weight: 700; text-align: right; padding-right: 4px; white-space: nowrap; }
+  table.tc td.v2 { background: #cdeccf; color: #14601f; font-weight: 800; }
+  table.tc td.v05 { background: #f6d6cb; color: #9c3517; font-weight: 800; }
+  table.tc td.v0 { background: #3a3a3a; color: #fff; font-weight: 800; }
+  table.tc td.v1 { color: #c5cbd4; }
+  .tc-note { font-size: 10px; color: #8a93a2; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="tabbar">
+    <button id="tab-battle-btn" class="active" onclick="switchTab('battle')">Battle</button>
+    <button id="tab-squad-btn" onclick="switchTab('squad')">Squad</button>
+    <button id="tab-coffee-btn" onclick="switchTab('coffee')">Buy Me a Coffee ☕</button>
+  </div>
+
+  <!-- ============ BATTLE TAB ============ -->
+  <div id="tab-battle" class="tab active">
+    <div class="panel">
+      <div class="matchup-grid">
+        <span class="row-label">Opponent</span>
+        <button class="slot-btn empty" id="opp-t1" onclick="pickOpp(1)">Type 1</button>
+        <button class="slot-btn empty" id="opp-t2" onclick="pickOpp(2)">Type 2</button>
+        <button class="chart-btn" onclick="openChart()">📊 Type Chart</button>
+        <div class="matchup-divider"></div>
+        <span class="row-label" style="color:#7e3ff2;">
+          Coverage
+          <label class="cov-toggle" title="Model the opponent's coverage moves">
+            <input type="checkbox" id="cov-switch" onchange="toggleCoverage()">
+            <span class="cov-slider"></span>
+          </label>
+          <button class="info-icon" onclick="openCovInfo()" title="What's a coverage move?">i</button>
+        </span>
+        <button class="slot-btn empty" id="cov-1" onclick="pickCoverage(0)" style="display:none;">Cov 1</button>
+        <button class="slot-btn empty" id="cov-2" onclick="pickCoverage(1)" style="display:none;">Cov 2</button>
+        <button class="swap-btn" id="swap-btn" onclick="swapOppCoverage()" title="Swap Opponent ⇄ Coverage" style="display:none;">⇄ Switch</button>
+        <div class="matchup-divider"></div>
+        <span class="row-label" style="color:#157a41;">Yours · P<span id="me-num">1</span></span>
+        <span class="slot-btn empty" id="me-t1" style="cursor:default;">—</span>
+        <span class="slot-btn empty" id="me-t2" style="cursor:default;">—</span>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="overlay-zone">
+        <div class="overlay offense" id="ov-offense">
+          <div class="overlay-label">OFFENSE — squad coverage · STAB shown for selected Pokémon's moves</div>
+          <div class="chip-grid" id="off-grid"></div>
+          <div class="overlay-hint" id="off-hint"></div>
+        </div>
+        <div class="overlay defense" id="ov-defense">
+          <div class="overlay-label">DEFENSE — incoming on selected Pokémon</div>
+          <div class="chip-grid" id="def-grid"></div>
+          <div class="overlay-hint" id="def-hint"></div>
+        </div>
+      </div>
+      <div class="eff-bar">
+        <div class="eff-col c-4">4×<small>quad</small></div>
+        <div class="eff-col c-3">3×<small>stab·se</small></div>
+        <div class="eff-col c-2">2×<small>super</small></div>
+        <div class="eff-col c-15">1.5×<small>stab</small></div>
+        <div class="eff-col c-1">1×<small>neutral</small></div>
+        <div class="eff-col c-05">0.5×<small>resist</small></div>
+        <div class="eff-col c-0">0×<small>immune</small></div>
+      </div>
+      <div class="toggles" style="margin-top:14px;">
+        <button id="tg-off" class="offense" onclick="toggle('offense')">OFFENSE</button>
+        <button id="tg-def" class="defense" onclick="toggle('defense')">DEFENSE</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Moves — Pokémon <span id="sel-num">1</span></h2>
+      <div class="move-cards" id="move-cards"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Select Pokémon</h2>
+      <div class="nav16" id="nav16"></div>
+      <div class="dot-row" id="attack-dots"></div>
+      <div class="dot-label">Attack</div>
+      <div class="dot-row" id="defence-dots"></div>
+      <div class="dot-label">Defence</div>
+    </div>
+  </div>
+
+  <!-- ============ SQUAD TAB ============ -->
+  <div id="tab-squad" class="tab">
+    <div class="panel">
+      <div class="squad-head-row">
+        <h2>Your Squad — types only, auto-saved</h2>
+        <button id="clear-squad-btn" class="clear-squad-btn" onclick="clearOrUndo()">Clear Squad</button>
+      </div>
+      <div class="squad-grid" id="squad-grid"></div>
+    </div>
+  </div>
+
+  <!-- ============ COFFEE TAB ============ -->
+  <div id="tab-coffee" class="tab">
+<!-- COFFEE TAB START -->
+<style id="coffee-styles">
+  .coffee-tab { text-align: center; padding: 28px 20px 34px; }
+  .coffee-tab .cup { width: 96px; height: 96px; margin: 4px auto 18px; position: relative; }
+  .coffee-tab .cup .steam { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+  .coffee-tab .cup .steam span { width: 5px; height: 18px; background: #cfd5dd; border-radius: 999px; opacity: .8; animation: coffee-steam 2.4s ease-in-out infinite; }
+  .coffee-tab .cup .steam span:nth-child(2) { animation-delay: .5s; height: 22px; }
+  .coffee-tab .cup .steam span:nth-child(3) { animation-delay: 1s; }
+  @keyframes coffee-steam { 0%,100% { transform: translateY(0); opacity: .3; } 50% { transform: translateY(-6px); opacity: .85; } }
+  .coffee-tab .cup .mug { position: absolute; bottom: 0; left: 8px; width: 64px; height: 52px; background: #1a1a2e; border-radius: 8px 8px 14px 14px; }
+  .coffee-tab .cup .mug::before { content: ''; position: absolute; top: 7px; left: 7px; right: 7px; height: 9px; background: #6f4e37; border-radius: 4px; }
+  .coffee-tab .cup .handle { position: absolute; bottom: 14px; right: 6px; width: 22px; height: 26px; border: 7px solid #1a1a2e; border-left: none; border-radius: 0 14px 14px 0; }
+  .coffee-tab h3 { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 10px; }
+  .coffee-tab .blurb { font-size: 14px; line-height: 1.55; color: #5b6472; max-width: 420px; margin: 0 auto 6px; }
+  .coffee-tab .fund { font-size: 14px; line-height: 1.55; color: #3a4150; max-width: 420px; margin: 0 auto 22px; font-weight: 600; }
+  .coffee-tab .fund .paw { font-style: normal; }
+  .coffee-tab .coffee-btn { display: inline-flex; align-items: center; gap: 8px; background: #1a1a2e; color: #fff; border: none; padding: 12px 22px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; transition: background .15s; }
+  .coffee-tab .coffee-btn:hover { background: #2d2d44; }
+  .coffee-tab .handle-line { margin-top: 20px; font-size: 13px; color: #8a93a2; }
+  .coffee-tab .handle-line a { color: #5b6472; font-weight: 700; text-decoration: none; }
+  .coffee-tab .handle-line a:hover { text-decoration: underline; }
+  .coffee-tab .free-note { margin-top: 4px; font-size: 12px; color: #aeb6c2; }
+</style>
+
+<div class="panel">
+  <div class="coffee-tab">
+    <div class="cup" aria-hidden="true">
+      <div class="steam"><span></span><span></span><span></span></div>
+      <div class="mug"></div>
+      <div class="handle"></div>
+    </div>
+    <h3>Enjoying the tool?</h3>
+    <p class="blurb">This app is free and always will be. If it's helped you build a better team, a small tip means a lot.</p>
+    <p class="fund">Tips fund my puppy's next chew toy! <span class="paw">🐶</span></p>
+    <!-- STRIPE PAYMENT LINK — currently TEST mode. Swap for live URL before public launch. -->
+    <a class="coffee-btn" href="https://buy.stripe.com/test_28EbJ15LsfhyciS0I373G00" target="_blank" rel="noopener">Support the Battle Advisor →</a>
+    <div class="handle-line">Find me on Instagram <a href="https://instagram.com/battle_adviser" target="_blank" rel="noopener">@battle_adviser</a></div>
+    <div class="free-note">No account, no nags — tip only if you want to.</div>
+  </div>
+</div>
+<!-- COFFEE TAB END -->
+  </div>
+</div>
+
+<!-- one-shot toast -->
+<div id="toast" class="toast" onclick="hideToast()"></div>
+
+<!-- Type picker overlay -->
+<div class="modal-back" id="picker-back" onclick="if(event.target===this)closePicker()">
+  <div class="picker">
+    <h3 id="picker-title">Select a type</h3>
+    <div class="type-grid" id="picker-grid"></div>
+  </div>
+</div>
+
+<!-- Type chart modal -->
+<div class="modal-back" id="chart-back" onclick="if(event.target===this)closeChart()">
+  <div class="chart-modal">
+    <div class="ch-head">
+      <h3>Type Effectiveness Chart</h3>
+      <button class="x" onclick="closeChart()">✕</button>
+    </div>
+    <div class="legend">Rows = attacking type, columns = defending type. <b style="color:#14601f">2×</b> · <b style="color:#9c3517">½×</b> · <b style="color:#3a3a3a">0×</b> · blank = 1×</div>
+    <div class="chart-scroll" id="chart-scroll"></div>
+    <div class="tc-note">Hover-free reference. Dual-type defenders = multiply the two columns.</div>
+  </div>
+</div>
+
+<!-- Coverage info modal -->
+<div class="modal-back" id="cov-info-back" onclick="if(event.target===this)closeCovInfo()">
+  <div class="picker" style="max-width:480px;">
+    <div class="ch-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 style="margin:0;">Coverage moves</h3>
+      <button class="x" onclick="closeCovInfo()">✕</button>
+    </div>
+    <p style="font-size:13px;line-height:1.55;color:#3a4150;margin:0;">When evaluating an opponent's Pokémon, the app should check whether your input includes coverage against you — i.e. at least one move that hits your typing effectively, outside of what their STAB alone would threaten. The app would flag if the opponent has a coverage move: a move that resists or bypasses your natural defensive typing, meaning they can punish you for staying in even when the matchup looks favourable on paper.</p>
+  </div>
+</div>
+
+<script>
+const TYPES = ["Normal","Fire","Water","Grass","Electric","Ice","Fighting","Poison",
+  "Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel","Fairy"];
+
+const TYPE_COLORS = {
+  Normal:'#A8A878', Fire:'#F08030', Water:'#6890F0', Grass:'#78C850', Electric:'#F8D030',
+  Ice:'#98D8D8', Fighting:'#C03028', Poison:'#A040A0', Ground:'#E0C068', Flying:'#A890F0',
+  Psychic:'#F85888', Bug:'#A8B820', Rock:'#B8A038', Ghost:'#705898', Dragon:'#7038F8',
+  Dark:'#705848', Steel:'#B8B8D0', Fairy:'#EE99AC'
+};
+
+const ATTACK_CHART = {
+  Normal:   { Rock: 0.5, Steel: 0.5, Ghost: 0 },
+  Fire:     { Fire: 0.5, Water: 0.5, Rock: 0.5, Dragon: 0.5, Grass: 2, Ice: 2, Bug: 2, Steel: 2 },
+  Water:    { Water: 0.5, Grass: 0.5, Dragon: 0.5, Fire: 2, Ground: 2, Rock: 2 },
+  Grass:    { Fire: 0.5, Grass: 0.5, Poison: 0.5, Flying: 0.5, Bug: 0.5, Dragon: 0.5, Steel: 0.5, Water: 2, Ground: 2, Rock: 2 },
+  Electric: { Grass: 0.5, Electric: 0.5, Dragon: 0.5, Ground: 0, Water: 2, Flying: 2 },
+  Ice:      { Fire: 0.5, Water: 0.5, Ice: 0.5, Steel: 0.5, Grass: 2, Ground: 2, Flying: 2, Dragon: 2 },
+  Fighting: { Poison: 0.5, Flying: 0.5, Psychic: 0.5, Bug: 0.5, Fairy: 0.5, Ghost: 0, Normal: 2, Ice: 2, Rock: 2, Dark: 2, Steel: 2 },
+  Poison:   { Poison: 0.5, Ground: 0.5, Rock: 0.5, Ghost: 0.5, Steel: 0, Grass: 2, Fairy: 2 },
+  Ground:   { Grass: 0.5, Bug: 0.5, Flying: 0, Fire: 2, Electric: 2, Poison: 2, Rock: 2, Steel: 2 },
+  Flying:   { Electric: 0.5, Rock: 0.5, Steel: 0.5, Grass: 2, Fighting: 2, Bug: 2 },
+  Psychic:  { Psychic: 0.5, Steel: 0.5, Dark: 0, Fighting: 2, Poison: 2 },
+  Bug:      { Fire: 0.5, Fighting: 0.5, Poison: 0.5, Flying: 0.5, Ghost: 0.5, Steel: 0.5, Fairy: 0.5, Grass: 2, Psychic: 2, Dark: 2 },
+  Rock:     { Fighting: 0.5, Ground: 0.5, Steel: 0.5, Fire: 2, Ice: 2, Flying: 2, Bug: 2 },
+  Ghost:    { Dark: 0.5, Normal: 0, Ghost: 2, Psychic: 2 },
+  Dragon:   { Steel: 0.5, Fairy: 0, Dragon: 2 },
+  Dark:     { Fighting: 0.5, Dark: 0.5, Fairy: 0.5, Psychic: 2, Ghost: 2 },
+  Steel:    { Fire: 0.5, Water: 0.5, Electric: 0.5, Steel: 0.5, Ice: 2, Rock: 2, Fairy: 2 },
+  Fairy:    { Fire: 0.5, Poison: 0.5, Steel: 0.5, Fighting: 2, Dragon: 2, Dark: 2 }
+};
+
+function getEffectiveness(attackType, defType1, defType2) {
+  if (!attackType || !defType1) return 1;
+  const chart = ATTACK_CHART[attackType] || {};
+  const m1 = (defType1 in chart) ? chart[defType1] : 1;
+  const m2 = defType2 ? ((defType2 in chart) ? chart[defType2] : 1) : 1;
+  return m1 * m2;
+}
+
+function columnFor(v) {
+  if (v === 0) return 6;
+  if (v < 0.875) return 5;
+  if (v < 1.25) return 4;
+  if (v < 1.75) return 3;
+  if (v < 2.5) return 2;
+  if (v < 3.5) return 1;
+  return 0;
+}
+
+function fmtMult(v) {
+  if (v === 0) return '0×';
+  if (Number.isInteger(v)) return v + '×';
+  return (Math.round(v * 100) / 100).toString().replace(/\.?0+$/,'') + '×';
+}
+
+function textColor(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#1a1a1a' : '#ffffff';
+}
+
+const SQUAD_KEY = 'pba_squad';
+let state = {
+  squad: null,
+  oppType1: null,
+  oppType2: null,
+  offense: false,
+  defense: false,
+  coverageOn: false,
+  coverage: [null, null],
+  selected: 0
+};
+
+function defaultSquad() {
+  return [
+    { slot: 1, type1: 'Psychic', type2: 'Flying', moves: ['Flying', 'Rock', 'Normal', 'Fighting'] },
+    { slot: 2, type1: 'Ground',  type2: 'Steel',  moves: ['Steel', 'Rock', 'Normal', 'Ground'] },
+    { slot: 3, type1: 'Dragon',  type2: 'Poison', moves: ['Poison', 'Fire', 'Dragon', 'Dragon'] },
+    { slot: 4, type1: 'Psychic', type2: 'Fairy',  moves: ['Fairy', 'Fairy', 'Psychic', 'Fire'] },
+    { slot: 5, type1: 'Water',   type2: 'Flying', moves: ['Water', 'Ice', 'Dark', 'Dragon'] },
+    { slot: 6, type1: 'Fire',    type2: null,     moves: ['Fire', 'Fire', 'Fighting', 'Normal'] }
+  ];
+}
+function loadSquad() {
+  try {
+    const raw = localStorage.getItem(SQUAD_KEY);
+    if (!raw) return defaultSquad();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr) || arr.length !== 6) return defaultSquad();
+    return arr.map((s, i) => ({
+      slot: i + 1,
+      type1: s.type1 ?? null,
+      type2: s.type2 ?? null,
+      moves: Array.isArray(s.moves) ? [0,1,2,3].map(j => s.moves[j] ?? null) : [null,null,null,null]
+    }));
+  } catch (e) { return defaultSquad(); }
+}
+function saveSquad() {
+  localStorage.setItem(SQUAD_KEY, JSON.stringify(state.squad));
+}
+
+let undoSnapshot = null;
+function emptySquad() {
+  return [1,2,3,4,5,6].map(n => ({ slot: n, type1: null, type2: null, moves: [null,null,null,null] }));
+}
+function invalidateUndo() {
+  if (undoSnapshot) { undoSnapshot = null; updateClearBtn(); }
+}
+function updateClearBtn() {
+  const b = document.getElementById('clear-squad-btn');
+  if (!b) return;
+  b.textContent = undoSnapshot ? 'Undo' : 'Clear Squad';
+  b.classList.toggle('undo', !!undoSnapshot);
+}
+function clearOrUndo() {
+  if (undoSnapshot) {
+    state.squad = undoSnapshot;
+    undoSnapshot = null;
+  } else {
+    undoSnapshot = JSON.parse(JSON.stringify(state.squad));
+    state.squad = emptySquad();
+    showToast("Squad cleared. (Irreversible unless you clear your browser history 😏) — hit Undo to bring it back.");
+  }
+  saveSquad();
+  renderSquad();
+}
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 6000);
+}
+function hideToast() {
+  const t = document.getElementById('toast');
+  if (t) t.classList.remove('show');
+}
+
+let pickerCb = null;
+function openPicker(title, allowNone, cb) {
+  pickerCb = cb;
+  document.getElementById('picker-title').textContent = title;
+  const grid = document.getElementById('picker-grid');
+  grid.innerHTML = '';
+  if (allowNone) {
+    const b = document.createElement('button');
+    b.className = 'none-btn';
+    b.textContent = 'None';
+    b.onclick = () => { pickerCb && pickerCb(null); closePicker(); };
+    grid.appendChild(b);
+  }
+  TYPES.forEach(t => {
+    const b = document.createElement('button');
+    b.textContent = t;
+    b.style.background = TYPE_COLORS[t];
+    b.style.color = textColor(TYPE_COLORS[t]);
+    b.onclick = () => { pickerCb && pickerCb(t); closePicker(); };
+    grid.appendChild(b);
+  });
+  document.getElementById('picker-back').classList.add('show');
+}
+function closePicker() { document.getElementById('picker-back').classList.remove('show'); pickerCb = null; }
+
+function buildChart() {
+  let html = '<table class="tc"><thead><tr><th class="corner"></th>';
+  TYPES.forEach(d => {
+    html += `<th style="background:${TYPE_COLORS[d]};color:${textColor(TYPE_COLORS[d])}">${d.slice(0,3)}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  TYPES.forEach(a => {
+    html += `<tr><th style="background:${TYPE_COLORS[a]};color:${textColor(TYPE_COLORS[a])}">${a.slice(0,3)}</th>`;
+    TYPES.forEach(d => {
+      const v = getEffectiveness(a, d, null);
+      let cls = 'v1', txt = '';
+      if (v === 2) { cls = 'v2'; txt = '2'; }
+      else if (v === 0.5) { cls = 'v05'; txt = '½'; }
+      else if (v === 0) { cls = 'v0'; txt = '0'; }
+      html += `<td class="${cls}">${txt}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('chart-scroll').innerHTML = html;
+}
+function openChart() { buildChart(); document.getElementById('chart-back').classList.add('show'); }
+function closeChart() { document.getElementById('chart-back').classList.remove('show'); }
+
+function pickOpp(n) {
+  openPicker('Opponent Type ' + n, n === 2, (t) => {
+    if (n === 1) { if (t === null) return; state.oppType1 = t; }
+    else { state.oppType2 = t; }
+    renderBattle();
+  });
+}
+
+function toggleCoverage() {
+  state.coverageOn = document.getElementById('cov-switch').checked;
+  renderBattle();
+}
+function pickCoverage(idx) {
+  openPicker('Coverage ' + (idx + 1), true, (t) => {
+    state.coverage[idx] = t;
+    renderBattle();
+  });
+}
+function swapOppCoverage() {
+  const o1 = state.oppType1, o2 = state.oppType2;
+  state.oppType1 = state.coverage[0];
+  state.oppType2 = state.coverage[1];
+  state.coverage[0] = o1;
+  state.coverage[1] = o2;
+  renderBattle();
+}
+function openCovInfo() { document.getElementById('cov-info-back').classList.add('show'); }
+function closeCovInfo() { document.getElementById('cov-info-back').classList.remove('show'); }
+
+function toggle(which) {
+  state[which] = !state[which];
+  renderBattle();
+}
+function switchTab(tab) {
+  invalidateUndo();
+  document.getElementById('tab-battle').classList.toggle('active', tab === 'battle');
+  document.getElementById('tab-squad').classList.toggle('active', tab === 'squad');
+  document.getElementById('tab-coffee').classList.toggle('active', tab === 'coffee');
+  document.getElementById('tab-battle-btn').classList.toggle('active', tab === 'battle');
+  document.getElementById('tab-squad-btn').classList.toggle('active', tab === 'squad');
+  document.getElementById('tab-coffee-btn').classList.toggle('active', tab === 'coffee');
+  if (tab === 'battle') renderBattle();
+  if (tab === 'squad') renderSquad();
+}
+function selectPokemon(i) { state.selected = i; renderBattle(); }
+
+function makeChip(type, mult, hasStab, isDefense, badge) {
+  const c = document.createElement('div');
+  c.className = 'chip';
+  c.style.background = TYPE_COLORS[type];
+  c.style.color = textColor(TYPE_COLORS[type]);
+  if (isDefense) c.style.boxShadow = 'inset 0 0 0 2px rgba(210,60,60,.9)';
+  else c.style.boxShadow = 'inset 0 0 0 2px rgba(31,157,87,.9)';
+  let badgeHtml = '';
+  if (hasStab) badgeHtml = '<span class="stab">STAB</span>';
+  else if (badge) badgeHtml = `<span class="badge-cov">${badge}</span>`;
+  c.innerHTML = `${type}<span class="mult">${fmtMult(mult)}</span>${badgeHtml}`;
+  return c;
+}
+function emptyGrid(id) {
+  const g = document.getElementById(id);
+  g.innerHTML = '';
+  const cells = [];
+  for (let i = 0; i < 7; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'chip-cell';
+    g.appendChild(cell);
+    cells.push(cell);
+  }
+  return cells;
+}
+
+function setDisplayChip(el, type) {
+  if (type) {
+    el.className = 'slot-btn typed';
+    el.style.cursor = 'default';
+    el.textContent = type;
+    el.style.background = TYPE_COLORS[type];
+    el.style.color = textColor(TYPE_COLORS[type]);
+  } else {
+    el.className = 'slot-btn empty';
+    el.style.cursor = 'default';
+    el.textContent = '—';
+    el.style.background = '';
+    el.style.color = '';
+  }
+}
+
+function renderBattle() {
+  document.getElementById('sel-num').textContent = state.selected + 1;
+  const me = state.squad[state.selected];
+  document.getElementById('me-num').textContent = state.selected + 1;
+  setDisplayChip(document.getElementById('me-t1'), me.type1);
+  setDisplayChip(document.getElementById('me-t2'), me.type2);
+  const t1 = document.getElementById('opp-t1');
+  if (state.oppType1) {
+    t1.textContent = state.oppType1; t1.className = 'slot-btn typed';
+    t1.style.background = TYPE_COLORS[state.oppType1]; t1.style.color = textColor(TYPE_COLORS[state.oppType1]);
+  } else { t1.textContent = 'Type 1'; t1.className = 'slot-btn empty'; t1.style.background = ''; t1.style.color = ''; }
+  const t2 = document.getElementById('opp-t2');
+  if (state.oppType2) {
+    t2.textContent = state.oppType2; t2.className = 'slot-btn typed';
+    t2.style.background = TYPE_COLORS[state.oppType2]; t2.style.color = textColor(TYPE_COLORS[state.oppType2]);
+  } else { t2.textContent = 'Type 2'; t2.className = 'slot-btn empty'; t2.style.background = ''; t2.style.color = ''; }
+  const covSwitch = document.getElementById('cov-switch');
+  if (covSwitch) covSwitch.checked = state.coverageOn;
+  const cov1El = document.getElementById('cov-1');
+  const cov2El = document.getElementById('cov-2');
+  const swapEl = document.getElementById('swap-btn');
+  if (cov1El) cov1El.style.display = state.coverageOn ? '' : 'none';
+  if (cov2El) cov2El.style.display = state.coverageOn ? '' : 'none';
+  if (swapEl) swapEl.style.display = state.coverageOn ? '' : 'none';
+  if (state.coverageOn) {
+    styleSlotBtn(cov1El, state.coverage[0], 'Cov 1');
+    styleSlotBtn(cov2El, state.coverage[1], 'Cov 2');
+  }
+  document.getElementById('tg-off').classList.toggle('on', state.offense);
+  document.getElementById('tg-def').classList.toggle('on', state.defense);
+  document.getElementById('ov-offense').classList.toggle('show', state.offense);
+  document.getElementById('ov-defense').classList.toggle('show', state.defense);
+  if (state.offense) renderOffense();
+  if (state.defense) renderDefense();
+  renderMoveCards();
+  renderNav();
+  renderDots();
+}
+
+function renderOffense() {
+  const cells = emptyGrid('off-grid');
+  const hint = document.getElementById('off-hint');
+  if (!state.oppType1) { hint.textContent = 'Pick an opponent type to see your coverage.'; return; }
+  hint.textContent = '';
+  const set = new Set();
+  state.squad.forEach(p => {
+    if (p.type1) set.add(p.type1);
+    if (p.type2) set.add(p.type2);
+    p.moves.forEach(m => { if (m) set.add(m); });
+  });
+  if (set.size === 0) { hint.textContent = 'Configure your squad in the Squad tab first.'; return; }
+  const sel = state.squad[state.selected];
+  const stabTypes = new Set();
+  if (sel) sel.moves.forEach(m => { if (m && (m === sel.type1 || m === sel.type2)) stabTypes.add(m); });
+  const entries = [...set].map(type => {
+    const base = getEffectiveness(type, state.oppType1, state.oppType2);
+    const hasStab = stabTypes.has(type);
+    const eff = base * (hasStab ? 1.5 : 1);
+    return { type, eff, hasStab };
+  }).sort((a, b) => b.eff - a.eff);
+  entries.forEach(e => {
+    cells[columnFor(e.eff)].appendChild(makeChip(e.type, e.eff, e.hasStab, false));
+  });
+}
+
+function renderDefense() {
+  const cells = emptyGrid('def-grid');
+  const hint = document.getElementById('def-hint');
+  const p = state.squad[state.selected];
+  if (!state.oppType1) { hint.textContent = 'Pick an opponent type to see incoming damage.'; return; }
+  if (!p.type1) { hint.textContent = `Pokémon ${state.selected + 1} has no type set (Squad tab).`; return; }
+  hint.textContent = '';
+  const oppTypes = [state.oppType1, state.oppType2].filter(Boolean);
+  oppTypes.forEach(att => {
+    const v = getEffectiveness(att, p.type1, p.type2);
+    cells[columnFor(v)].appendChild(makeChip(att, v, false, true));
+  });
+  if (state.coverageOn) {
+    const seen = new Set(oppTypes);
+    state.coverage.forEach(cov => {
+      if (!cov || seen.has(cov)) return;
+      seen.add(cov);
+      const v = getEffectiveness(cov, p.type1, p.type2);
+      cells[columnFor(v)].appendChild(makeChip(cov, v, false, true, 'COV'));
+    });
+  }
+}
+
+function renderMoveCards() {
+  const wrap = document.getElementById('move-cards');
+  wrap.innerHTML = '';
+  const p = state.squad[state.selected];
+  for (let i = 0; i < 4; i++) {
+    const mv = p.moves[i];
+    const card = document.createElement('div');
+    if (!mv) {
+      card.className = 'move-card empty';
+      card.textContent = 'Empty';
+      wrap.appendChild(card);
+      continue;
+    }
+    card.className = 'move-card';
+    card.style.background = TYPE_COLORS[mv];
+    card.style.color = textColor(TYPE_COLORS[mv]);
+    const hasStab = (mv === p.type1 || mv === p.type2);
+    let mult = '—';
+    if (state.oppType1) {
+      const base = getEffectiveness(mv, state.oppType1, state.oppType2);
+      mult = fmtMult(base * (hasStab ? 1.5 : 1));
+    }
+    card.innerHTML = `<div class="mname">${mv}</div><div class="mmult">${mult}</div>` +
+      (hasStab ? '<div class="stab-badge">STAB</div>' : '');
+    wrap.appendChild(card);
+  }
+}
+
+function renderNav() {
+  const nav = document.getElementById('nav16');
+  nav.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const p = state.squad[i];
+    const b = document.createElement('button');
+    if (i === state.selected) b.classList.add('active');
+    b.innerHTML = `<span class="nav-num">${i + 1}</span>` + typeBarsHTML(p.type1, p.type2);
+    b.onclick = () => selectPokemon(i);
+    nav.appendChild(b);
+  }
+}
+function typeBarsHTML(t1, t2) {
+  const types = [t1, t2].filter(Boolean);
+  if (types.length === 0) return '<span class="tbars"><span class="tbar empty"></span></span>';
+  const bars = types.map(t => `<span class="tbar" style="background:${TYPE_COLORS[t]}"></span>`).join('');
+  return `<span class="tbars">${bars}</span>`;
+}
+
+const SCALE = {
+  deepGreen:  '#157a41',
+  lightGreen: '#7cc99e',
+  grey:       '#c4cad3',
+  lightRed:   '#e79c90',
+  deepRed:    '#c0392b'
+};
+const EMPTY_DOT = 'empty';
+
+function defenceInfo(p) {
+  if (!state.oppType1 || !p.type1) return { color: EMPTY_DOT, title: 'Defence — set opponent & squad' };
+  const incoming = [state.oppType1, state.oppType2].filter(Boolean)
+    .map(att => getEffectiveness(att, p.type1, p.type2));
+  const avg = incoming.reduce((a, b) => a + b, 0) / incoming.length;
+  const max = Math.max(...incoming);
+  const covHits = state.coverageOn
+    ? state.coverage.filter(Boolean).map(c => getEffectiveness(c, p.type1, p.type2))
+    : [];
+  const covMax = covHits.length ? Math.max(...covHits) : 0;
+  const covDanger = covHits.some(v => v >= 2);
+  let color;
+  if (incoming.some(v => v >= 2) || covDanger) {
+    color = (avg >= 2 || covMax >= 4) ? SCALE.deepRed : SCALE.lightRed;
+  } else if (incoming.every(v => v === 1)) {
+    color = SCALE.grey;
+  } else if (avg <= 0.5) {
+    color = SCALE.deepGreen;
+  } else {
+    color = SCALE.lightGreen;
+  }
+  let title = `Defence — takes avg ${fmtMult(avg)}, worst ${fmtMult(max)}`;
+  if (covDanger) title += ` · coverage up to ${fmtMult(covMax)}`;
+  return { color, title };
+}
+
+function attackInfo(p) {
+  const moves = p.moves.filter(Boolean);
+  if (!state.oppType1 || moves.length === 0) return { color: EMPTY_DOT, title: 'Attack — set opponent & moves' };
+  const out = moves.map(mv => getEffectiveness(mv, state.oppType1, state.oppType2));
+  const avg = out.reduce((a, b) => a + b, 0) / out.length;
+  const best = Math.max(...out);
+  let color;
+  if (out.some(v => v >= 2)) color = (avg >= 2) ? SCALE.deepGreen : SCALE.lightGreen;
+  else if (out.every(v => v === 1)) color = SCALE.grey;
+  else if (avg <= 0.5) color = SCALE.deepRed;
+  else color = SCALE.lightRed;
+  return { color, title: `Attack — best ${fmtMult(best)}, avg ${fmtMult(avg)}` };
+}
+
+function renderDots() {
+  const fill = (id, infoFn) => {
+    const c = document.getElementById(id);
+    c.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'dot-cell';
+      const dot = document.createElement('div');
+      const info = infoFn(state.squad[i]);
+      if (info.color === EMPTY_DOT) { dot.className = 'dot empty'; }
+      else { dot.className = 'dot'; dot.style.background = info.color; }
+      dot.title = info.title;
+      cell.appendChild(dot);
+      c.appendChild(cell);
+    }
+  };
+  fill('attack-dots', attackInfo);
+  fill('defence-dots', defenceInfo);
+}
+
+function renderSquad() {
+  updateClearBtn();
+  const grid = document.getElementById('squad-grid');
+  grid.innerHTML = '';
+  state.squad.forEach((p, idx) => {
+    const slot = document.createElement('div');
+    slot.className = 'squad-slot';
+    const head = document.createElement('div');
+    head.className = 'slot-head';
+    head.textContent = 'POKÉMON ' + (idx + 1);
+    slot.appendChild(head);
+    const row = document.createElement('div');
+    row.className = 'squad-row';
+    row.appendChild(typeField('Type 1', p.type1, false, (t) => { p.type1 = t; invalidateUndo(); saveSquad(); renderSquad(); }));
+    row.appendChild(typeField('Type 2', p.type2, true, (t) => { p.type2 = t; invalidateUndo(); saveSquad(); renderSquad(); }));
+    slot.appendChild(row);
+    const ml = document.createElement('div');
+    ml.className = 'moves-label';
+    ml.textContent = 'Moves';
+    slot.appendChild(ml);
+    const mg = document.createElement('div');
+    mg.className = 'moves-grid';
+    for (let i = 0; i < 4; i++) {
+      mg.appendChild(moveBtn(p.moves[i], (t) => { p.moves[i] = t; invalidateUndo(); saveSquad(); renderSquad(); }));
+    }
+    slot.appendChild(mg);
+    grid.appendChild(slot);
+  });
+}
+
+function typeField(label, value, allowNone, onPick) {
+  const f = document.createElement('div');
+  f.className = 'field';
+  const l = document.createElement('label');
+  l.textContent = label;
+  f.appendChild(l);
+  const b = document.createElement('button');
+  styleSlotBtn(b, value, label);
+  b.onclick = () => openPicker(label, allowNone, onPick);
+  f.appendChild(b);
+  return f;
+}
+function moveBtn(value, onPick) {
+  const b = document.createElement('button');
+  styleSlotBtn(b, value, '—');
+  b.onclick = () => openPicker('Move type', true, onPick);
+  return b;
+}
+function styleSlotBtn(b, value, emptyLabel) {
+  if (value) {
+    b.className = 'slot-btn typed';
+    b.textContent = value;
+    b.style.background = TYPE_COLORS[value];
+    b.style.color = textColor(TYPE_COLORS[value]);
+  } else {
+    b.className = 'slot-btn empty';
+    b.textContent = emptyLabel;
+    b.style.background = '';
+    b.style.color = '';
+  }
+}
+
+state.squad = loadSquad();
+renderBattle();
+renderSquad();
+</script>
+</body>
+</html>
