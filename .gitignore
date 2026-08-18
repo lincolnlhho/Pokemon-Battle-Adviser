@@ -1,4 +1,5 @@
-# Public deploy repo — track ONLY what Netlify needs to serve the site.
+# Public deploy repo — track ONLY what Netlify needs to serve the site,
+# plus the build inputs that produce it.
 # Internal workstation docs (CLAUDE.md, MEMORY.md, handoffs, version logs,
 # deploy notes) stay local and out of the public GitHub repo.
 
@@ -9,3 +10,9 @@
 
 /battle-adviser-web/*
 !/battle-adviser-web/index.html
+
+# Build inputs: the web-only delta layered onto each Cowork artifact.
+# Outside the Netlify publish root, so never served — but versioned, because
+# the coffee tab has no other source of truth.
+!/build-web.mjs
+!/_web-parts/

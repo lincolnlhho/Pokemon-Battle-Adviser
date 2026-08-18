@@ -1,0 +1,2 @@
+  document.getElementById('tab-coffee').classList.toggle('active', tab === 'coffee');
+  document.getElementById('tab-coffee-btn').classList.toggle('active', tab === 'coffee');
