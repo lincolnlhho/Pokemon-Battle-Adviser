@@ -1,1160 +1,3215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#9f1d2f">
 <title>Pokémon Battle Adviser</title>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "26688a1648014e179b99fc6804ce23ad"}'></script><!-- End Cloudflare Web Analytics -->
 <style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /*
+   * Palette. Values mirror THEME in Pokemon_Type_Engine/src/design-tokens.js, which is the
+   * source of truth; runDiagnostics() fails loudly if the two ever drift apart.
+   *
+   * Three states, not two. An explicit viewer choice stamps data-theme on the root element,
+   * but the default "system" setting stamps nothing, so most readers only ever match
+   * prefers-color-scheme. Every colour is defined here on bare :root and only ever
+   * redefined below. A colour whose only definition sits inside a media query never applies
+   * in the unstamped state, which renders one theme's text on the other theme's ground.
+   */
+  :root {
+    --bg: #f4f5f8;
+    --surface: #ffffff;
+    --surface-soft: #f8f9fb;
+    --surface-hover: #fafbfc;
+    --surface-sunk: #f7f8fa;
+    --surface-inset: #eceff4;
+    --veil-1: rgba(255,255,255,.65);
+    --veil-2: rgba(255,255,255,.85);
+    --veil-3: rgba(255,255,255,.88);
+
+    --line: #dfe3ea;
+    --line-soft: #e7eaf0;
+    --line-strong: #c7cdd8;
+    --line-hover: #aeb6c4;
+
+    --ink: #162033;
+    --ink-soft: #455064;
+    --muted: #5f6879;
+    --faint: #6b7280;
+
+    --brand: #a92135;
+    --brand-dark: #741526;
+    --brand-lift: #c33143;
+    --brand-ink: #a31d30;
+    --brand-wash: rgba(169,33,53,.08);
+    --brand-ring: rgba(169,33,53,.52);
+    --brand-halo: rgba(169,33,53,.10);
+
+    --header: #17243a;
+    --header-deep: #142038;
+    --on-header: #ffffff;
+    --on-header-dim: rgba(255,255,255,.62);
+    --on-solid: #ffffff;
+    --on-deep: #ffffff;
+
+    --safe: #218a52;
+    --safe-solid: #1b7a47;
+    --safe-soft: #cfeeda;
+    --safe-tint: #edf9f2;
+    --safe-line: #91d4ad;
+    --safe-ink: #145c36;
+
+    --danger: #c83f4f;
+    --danger-soft: #f4c9cc;
+    --danger-tint: #fff0f1;
+    --danger-line: #e6a3aa;
+    --danger-ink: #8e2d39;
+    --danger-deep: #9c1f30;
+    --danger-deep-line: #7d1626;
+
+    --amber-soft: #fbe3bd;
+    --amber-line: #e0b26a;
+    --amber-ink: #7d4a08;
+
+    --chip: #e5e8ee;
+    --chip-line: #cdd2dc;
+
+    --zone-danger: rgba(200,63,79,.05);
+    --zone-safe: rgba(33,138,82,.05);
+
+    --dex-red: #ed5363;
+    --dex-ink: #17243a;
+    --dex-white: #ffffff;
+
+    --shadow: 0 14px 40px rgba(28, 38, 58, .10);
+    --focus: rgba(46, 118, 255, .45);
+    --scrim: rgba(15, 23, 38, .55);
+
+    --radius: 18px;
+    --sticky-col: 104px;
+    --net-col: 126px;
+    --exp-type-col: 104px;
+    --exp-net-col: 62px;
+  }
+
+  /*
+   * Dark. Only token values change here, never a component rule. Solid safe and danger
+   * fills lighten in dark, so text sitting on them flips to a dark ink rather than staying
+   * white; --on-deep stays white because --danger-deep stays a deep red in both themes.
+   */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11151c;
+      --surface: #1a202a;
+      --surface-soft: #212936;
+      --surface-hover: #222a36;
+      --surface-sunk: #161c25;
+      --surface-inset: #262d38;
+      --veil-1: rgba(26,32,42,.62);
+      --veil-2: rgba(26,32,42,.84);
+      --veil-3: rgba(26,32,42,.88);
+
+      --line: #2c3542;
+      --line-soft: #232b36;
+      --line-strong: #3d4859;
+      --line-hover: #556174;
+
+      --ink: #e8ecf3;
+      --ink-soft: #c2ccdb;
+      --muted: #98a3b5;
+      --faint: #8390a3;
+
+      --brand: #b32e42;
+      --brand-dark: #8d1a2c;
+      --brand-lift: #c6394b;
+      --brand-ink: #f2939c;
+      --brand-wash: rgba(200,60,80,.10);
+      --brand-ring: rgba(214,72,92,.55);
+      --brand-halo: rgba(214,72,92,.14);
+
+      --header: #0e1622;
+      --header-deep: #0a111b;
+      --on-header: #ffffff;
+      --on-header-dim: rgba(255,255,255,.62);
+      --on-solid: #0d1218;
+      --on-deep: #ffffff;
+
+      --safe: #4fbd84;
+      --safe-solid: #4fbd84;
+      --safe-soft: #17301f;
+      --safe-tint: #14261a;
+      --safe-line: #2f6f4b;
+      --safe-ink: #86dcaa;
+
+      --danger: #e8705f;
+      --danger-soft: #3a2320;
+      --danger-tint: #2e1c1a;
+      --danger-line: #7d3f39;
+      --danger-ink: #f6aaa1;
+      --danger-deep: #c2372a;
+      --danger-deep-line: #e2604e;
+
+      --amber-soft: #3a2c14;
+      --amber-line: #7a5c22;
+      --amber-ink: #f3ca80;
+
+      --chip: #262d38;
+      --chip-line: #3d4859;
+
+      --zone-danger: rgba(232,112,95,.07);
+      --zone-safe: rgba(79,189,132,.07);
+
+      --shadow: 0 14px 40px rgba(0, 0, 0, .45);
+      --focus: rgba(120, 165, 255, .55);
+      --scrim: rgba(4, 8, 14, .68);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #11151c;
+    --surface: #1a202a;
+    --surface-soft: #212936;
+    --surface-hover: #222a36;
+    --surface-sunk: #161c25;
+    --surface-inset: #262d38;
+    --veil-1: rgba(26,32,42,.62);
+    --veil-2: rgba(26,32,42,.84);
+    --veil-3: rgba(26,32,42,.88);
+
+    --line: #2c3542;
+    --line-soft: #232b36;
+    --line-strong: #3d4859;
+    --line-hover: #556174;
+
+    --ink: #e8ecf3;
+    --ink-soft: #c2ccdb;
+    --muted: #98a3b5;
+    --faint: #8390a3;
+
+    --brand: #b32e42;
+    --brand-dark: #8d1a2c;
+    --brand-lift: #c6394b;
+    --brand-ink: #f2939c;
+    --brand-wash: rgba(200,60,80,.10);
+    --brand-ring: rgba(214,72,92,.55);
+    --brand-halo: rgba(214,72,92,.14);
+
+    --header: #0e1622;
+    --header-deep: #0a111b;
+    --on-header: #ffffff;
+    --on-header-dim: rgba(255,255,255,.62);
+    --on-solid: #0d1218;
+    --on-deep: #ffffff;
+
+    --safe: #4fbd84;
+    --safe-solid: #4fbd84;
+    --safe-soft: #17301f;
+    --safe-tint: #14261a;
+    --safe-line: #2f6f4b;
+    --safe-ink: #86dcaa;
+
+    --danger: #e8705f;
+    --danger-soft: #3a2320;
+    --danger-tint: #2e1c1a;
+    --danger-line: #7d3f39;
+    --danger-ink: #f6aaa1;
+    --danger-deep: #c2372a;
+    --danger-deep-line: #e2604e;
+
+    --amber-soft: #3a2c14;
+    --amber-line: #7a5c22;
+    --amber-ink: #f3ca80;
+
+    --chip: #262d38;
+    --chip-line: #3d4859;
+
+    --zone-danger: rgba(232,112,95,.07);
+    --zone-safe: rgba(79,189,132,.07);
+
+    --shadow: 0 14px 40px rgba(0, 0, 0, .45);
+    --focus: rgba(120, 165, 255, .55);
+    --scrim: rgba(4, 8, 14, .68);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #f4f5f7;
-    color: #1a1a1a;
+    margin: 0;
+    min-width: 320px;
+    color: var(--ink);
+    background-color: var(--bg);
+    background-image: radial-gradient(circle at 10% -10%, var(--brand-wash), transparent 30rem);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
-    padding: 12px;
   }
-  .app { max-width: 760px; margin: 0 auto; }
+  button, input, textarea { font: inherit; }
+  button { color: inherit; }
+  button:focus-visible, textarea:focus-visible, input:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  [hidden] { display: none !important; }
 
-  /* ---------- Tabs ---------- */
-  .tabbar {
-    display: flex;
-    gap: 6px;
-    background: #e4e7ec;
-    padding: 5px;
-    border-radius: 12px;
-    margin-bottom: 14px;
-  }
-  .tabbar button {
-    flex: 1;
-    padding: 10px 0;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 15px;
-    font-weight: 600;
-    color: #5b6472;
-    cursor: pointer;
-    transition: all .15s;
-  }
-  .tabbar button.active {
-    background: #fff;
-    color: #1a1a1a;
-    box-shadow: 0 1px 3px rgba(0,0,0,.12);
-  }
-  .tab { display: none; }
-  .tab.active { display: block; }
-
-  /* ---------- Panels ---------- */
-  .panel {
-    background: #fff;
-    border-radius: 14px;
-    padding: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.07);
-    margin-bottom: 14px;
-  }
-  .panel h2 {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: #8a93a2;
-    margin-bottom: 10px;
-    font-weight: 700;
-  }
-
-  /* ---------- Matchup rows ---------- */
-  .matchup-grid {
-    display: grid;
-    grid-template-columns: 140px 1fr 1fr auto;
-    gap: 8px;
-    align-items: center;
-  }
-  .matchup-divider { grid-column: 1 / -1; border-top: 1px solid #eef0f3; margin: 2px 0; }
-  .row-label {
-    font-weight: 700; font-size: 14px; color: #3a4150;
-    display: flex; align-items: center; gap: 5px; white-space: nowrap;
-  }
-  .matchup-grid .slot-btn { width: 100%; }
-  .chart-btn {
-    background: #1a1a2e; color: #fff; border: none;
-    padding: 9px 14px; border-radius: 9px;
-    font-size: 13px; font-weight: 600; cursor: pointer;
-    display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
-  }
-  .chart-btn:hover { background: #2d2d44; }
-  .swap-btn {
-    background: #fff; color: #7e3ff2; border: 1.5px solid #7e3ff2;
-    padding: 8px 14px; border-radius: 9px;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; gap: 6px; flex: 0 0 auto; width: 100%;
-    justify-content: center;
-  }
-  .swap-btn:hover { background: #f3edff; }
-  .cov-toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
-  .cov-toggle input { display: none; }
-  .cov-slider { width: 34px; height: 20px; background: #cfd5dd; border-radius: 999px; position: relative; transition: background .15s; flex: none; }
-  .cov-slider::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
-  .cov-toggle input:checked + .cov-slider { background: #7e3ff2; }
-  .cov-toggle input:checked + .cov-slider::after { transform: translateX(14px); }
-  .info-icon { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #aeb6c2; background: #fff; color: #5b6472; font-size: 12px; font-weight: 700; font-style: italic; cursor: pointer; line-height: 1; display: inline-flex; align-items: center; justify-content: center; flex: none; }
-  .info-icon:hover { border-color: #5b6472; }
-  .chip .badge-cov { position: absolute; top: -5px; right: -3px; background: #7e3ff2; color: #fff; font-size: 7px; font-weight: 800; padding: 1px 3px; border-radius: 4px; border: 1px solid #00000022; }
-  /* Opponent-STAB marker on defence chips — red to read as an incoming threat, like the STAB/COV markers. */
-  .chip .badge-opp { position: absolute; top: -5px; right: -3px; background: #d23c3c; color: #fff; font-size: 7px; font-weight: 800; padding: 1px 3px; border-radius: 4px; border: 1px solid #00000022; }
-
-  /* slot button (used for opponent + squad type/move slots) */
-  .slot-btn {
-    border: 1.5px solid #d3d8e0;
-    background: #fff;
-    border-radius: 9px;
-    padding: 8px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    color: #1a1a1a;
-    transition: filter .12s, border-color .12s;
-    text-align: center;
-    line-height: 1.2;
-  }
-  .slot-btn.typed { border-color: transparent; }
-  .slot-btn.empty { color: #aeb6c2; font-weight: 500; }
-  .slot-btn:hover { filter: brightness(.95); }
-
-  /* ---------- Toggles ---------- */
-  .toggles { display: flex; gap: 10px; }
-  .toggles button {
-    flex: 1;
-    padding: 11px 0;
-    border-radius: 10px;
-    border: 2px solid #d3d8e0;
-    background: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: .04em;
-    cursor: pointer;
-    color: #5b6472;
-    transition: all .15s;
-  }
-  .toggles button.on.offense { background: #1f9d57; border-color: #1f9d57; color: #fff; }
-  .toggles button.on.defense { background: #d23c3c; border-color: #d23c3c; color: #fff; }
-
-  /* ---------- Overlay zone ---------- */
-  .overlay-zone { display: flex; flex-direction: column; gap: 8px; }
-  .overlay {
-    border-radius: 10px;
-    padding: 8px 8px 4px;
-    display: none;
-  }
-  .overlay.show { display: block; }
-  .overlay.offense { background: rgba(31,157,87,.10); border: 1px solid rgba(31,157,87,.30); }
-  .overlay.defense { background: rgba(210,60,60,.10); border: 1px solid rgba(210,60,60,.30); }
-  .overlay-label {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .08em;
-    margin-bottom: 6px;
-  }
-  .overlay.offense .overlay-label { color: #157a41; }
-  .overlay.defense .overlay-label { color: #a82c2c; }
-  .chip-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-    align-items: end;
-  }
-  .chip-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    align-items: center;
-    min-height: 4px;
-  }
-  .chip {
-    width: 100%;
-    max-width: 92px;
-    border-radius: 6px;
-    padding: 3px 2px;
-    text-align: center;
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1.15;
-    position: relative;
-  }
-  .chip .mult { display: block; font-size: 9px; opacity: .92; font-weight: 800; }
-  .chip .stab {
-    position: absolute;
-    top: -5px; right: -3px;
-    background: #ffd23f;
-    color: #1a1a1a;
-    font-size: 7px;
-    font-weight: 800;
-    padding: 1px 3px;
-    border-radius: 4px;
-    border: 1px solid #00000022;
-  }
-  .overlay-hint { font-size: 11px; color: #8a93a2; padding: 2px 2px 4px; }
-
-  /* ---------- Effectiveness bar ---------- */
-  .eff-bar {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-    margin-top: 4px;
-  }
-  .eff-col {
-    text-align: center;
-    padding: 8px 0;
-    font-size: 13px;
-    font-weight: 800;
-    border-radius: 7px;
-    color: #fff;
-  }
-  .eff-col small { display:block; font-size: 8px; font-weight:600; opacity:.85; letter-spacing:.03em; }
-  .c-4   { background: #128a45; }
-  .c-3   { background: #2aa35a; }
-  .c-2   { background: #5cb874; }
-  .c-15  { background: #8a93a2; }
-  .c-1   { background: #aeb6c2; color:#2a2f38; }
-  .c-05  { background: #e08a5a; }
-  .c-0   { background: #c0392b; }
-
-  /* ---------- Move cards ---------- */
-  .move-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-  .move-card {
-    border-radius: 10px;
-    padding: 10px 6px;
-    text-align: center;
-    color: #fff;
-    min-height: 78px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    position: relative;
-  }
-  .move-card.empty {
-    background: #eef0f3;
-    color: #aeb6c2;
-    border: 1.5px dashed #d3d8e0;
-    font-weight: 600;
-  }
-  .move-card .mname { font-size: 12px; font-weight: 800; }
-  .move-card .mmult { font-size: 17px; font-weight: 800; }
-  .move-card .stab-badge {
-    position: absolute;
-    top: 5px; right: 5px;
-    background: #ffd23f;
-    color: #1a1a1a;
-    font-size: 8px;
-    font-weight: 800;
-    padding: 1px 4px;
-    border-radius: 5px;
-  }
-
-  /* ---------- 1-6 nav ---------- */
-  .nav16 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-  .nav16 button {
-    padding: 9px 0 8px;
-    border-radius: 10px;
-    border: 2px solid #d3d8e0;
-    background: #fff;
-    color: #5b6472;
-    cursor: pointer;
-  }
-  .nav16 button.active { background: #1a1a2e; border-color: #1a1a2e; color: #fff; }
-  .nav16 .nav-num { display: block; font-size: 16px; font-weight: 800; line-height: 1; }
-  .nav16 .tbars { display: flex; gap: 3px; justify-content: center; margin-top: 5px; }
-  .nav16 .tbar { width: 14px; height: 5px; border-radius: 2px; }
-  .nav16 .tbar.empty { background: #d3d8e0; }
-  .dot-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 12px; }
-  .dot-cell { display: flex; justify-content: center; }
-  .dot { width: 16px; height: 16px; border-radius: 50%; }
-  .dot.empty { background: transparent; border: 2px solid #dadee4; box-sizing: border-box; }
-  .dot-label { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #8a93a2; margin-top: 4px; }
-
-  /* ---------- Squad tab ---------- */
-  .squad-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  /* Squad header row: title left, Clear/Undo button right */
-  .squad-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-  .squad-head-row h2 { margin-bottom: 0; }
-  .clear-squad-btn { border: 1.5px solid #d3d8e0; background: #fff; color: #5b6472; padding: 7px 14px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; flex: none; }
-  .clear-squad-btn:hover { border-color: #c0392b; color: #c0392b; }
-  /* Undo state: the same button after a clear */
-  .clear-squad-btn.undo { border-color: #157a41; color: #157a41; }
-  .clear-squad-btn.undo:hover { background: #eaf6ef; }
-  /* Joke / status toast */
-  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(20px); max-width: 460px; width: calc(100% - 32px); background: #1a1a2e; color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13px; line-height: 1.45; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1000; text-align: center; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; cursor: pointer; }
-  .squad-slot {
-    background: #fff;
-    border-radius: 12px;
-    padding: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.07);
-  }
-  .squad-slot .slot-head { font-size: 12px; font-weight: 800; color: #8a93a2; margin-bottom: 8px; letter-spacing:.05em; }
-  .squad-row { display: flex; gap: 6px; margin-bottom: 8px; }
-  .squad-row .field { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-  .squad-row .field label { font-size: 9px; font-weight: 700; color: #aeb6c2; text-transform: uppercase; letter-spacing:.05em; }
-  .squad-row .field .slot-btn { width: 100%; padding: 7px 4px; font-size: 12px; }
-  .moves-label { font-size: 9px; font-weight: 700; color: #aeb6c2; text-transform: uppercase; letter-spacing:.05em; margin: 2px 0 4px; }
-  .moves-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .moves-grid .slot-btn { width: 100%; padding: 7px 4px; font-size: 12px; }
-
-  /* ---------- Type picker overlay ---------- */
-  .modal-back {
-    position: fixed; inset: 0;
-    background: rgba(20,22,30,.55);
-    display: none;
-    align-items: center;
-    justify-content: center;
+  .app-shell { min-height: 100vh; }
+  .topbar {
+    position: sticky;
+    top: 0;
     z-index: 50;
-    padding: 16px;
+    color: white;
+    background: linear-gradient(115deg, var(--brand-dark), var(--brand) 54%, var(--brand-lift));
+    box-shadow: 0 8px 24px rgba(91, 15, 29, .22);
   }
-  .modal-back.show { display: flex; }
-  .picker {
-    background: #fff;
-    border-radius: 16px;
-    padding: 16px;
-    width: 100%;
-    max-width: 420px;
-    max-height: 80vh;
-    overflow: auto;
+  .topbar-inner {
+    max-width: 1540px;
+    margin: 0 auto;
+    min-height: 76px;
+    padding: 10px clamp(14px, 3vw, 34px);
+    display: flex;
+    align-items: center;
+    gap: 20px;
   }
-  .picker h3 { font-size: 14px; margin-bottom: 12px; color: #3a4150; }
-  .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-  .type-grid button {
-    border: none;
-    border-radius: 8px;
-    padding: 11px 4px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    color: #fff;
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: max-content;
   }
-  .type-grid button.none-btn { background: #e4e7ec; color: #5b6472; grid-column: span 3; }
+  .dex-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,.92);
+    position: relative;
+    background: linear-gradient(var(--dex-red) 0 44%, var(--dex-ink) 44% 56%, var(--dex-white) 56%);
+    box-shadow: 0 3px 10px rgba(0,0,0,.18);
+  }
+  .dex-mark::after {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid var(--dex-ink);
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+  }
+  .brand-copy { line-height: 1.05; }
+  .brand-copy strong { display: block; font-size: 1rem; letter-spacing: .015em; }
+  .brand-copy span { display: block; margin-top: 4px; font-size: .72rem; opacity: .78; letter-spacing: .08em; text-transform: uppercase; }
 
-  /* ---------- Type chart modal ---------- */
-  .chart-modal {
-    background: #fff;
-    border-radius: 16px;
-    padding: 16px;
-    width: 100%;
-    max-width: 720px;
-    max-height: 86vh;
-    overflow: auto;
+  .nav-tabs {
+    margin-left: auto;
+    display: inline-flex;
+    padding: 4px;
+    border-radius: 13px;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.17);
   }
-  .chart-modal .ch-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .chart-modal h3 { font-size: 15px; color: #3a4150; }
-  .chart-modal .legend { font-size: 11px; color: #8a93a2; margin-bottom: 10px; }
-  .chart-modal .x { background: #eef0f3; border: none; width: 30px; height: 30px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; color: #5b6472; }
-  .chart-scroll { overflow: auto; }
-  table.tc { border-collapse: collapse; font-size: 9px; }
-  table.tc th, table.tc td { width: 22px; height: 22px; text-align: center; border: 1px solid #f0f1f4; }
-  table.tc th.corner { background: #fff; position: sticky; left: 0; top: 0; z-index: 3; }
-  table.tc thead th { position: sticky; top: 0; z-index: 2; color: #fff; font-weight: 700; }
-  table.tc tbody th { position: sticky; left: 0; z-index: 1; color: #fff; font-weight: 700; text-align: right; padding-right: 4px; white-space: nowrap; }
-  table.tc td.v2 { background: #cdeccf; color: #14601f; font-weight: 800; }
-  table.tc td.v05 { background: #f6d6cb; color: #9c3517; font-weight: 800; }
-  table.tc td.v0 { background: #3a3a3a; color: #fff; font-weight: 800; }
-  table.tc td.v1 { color: #c5cbd4; }
-  .tc-note { font-size: 10px; color: #8a93a2; margin-top: 8px; }
+  .nav-tab {
+    min-height: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: rgba(255,255,255,.78);
+    padding: 0 16px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .nav-tab.active { color: var(--brand-dark); background: var(--on-header); box-shadow: 0 3px 10px rgba(0,0,0,.13); }
+
+  main {
+    width: min(1540px, 100%);
+    margin: 0 auto;
+    padding: clamp(18px, 3vw, 34px);
+  }
+  .view-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .eyebrow {
+    color: var(--brand);
+    font-size: .75rem;
+    font-weight: 850;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+  h1 { margin: 5px 0 7px; font-size: clamp(1.65rem, 4vw, 2.45rem); line-height: 1.05; letter-spacing: -.035em; }
+  .lede { margin: 0; color: var(--muted); max-width: 760px; line-height: 1.55; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .toolbar-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .button {
+    min-height: 42px;
+    border: 1px solid var(--line-strong);
+    border-radius: 11px;
+    background: var(--surface);
+    padding: 0 13px;
+    font-weight: 750;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(17, 29, 48, .03);
+  }
+  .button:hover { border-color: var(--line-hover); background: var(--surface-hover); }
+  .button.primary { color: white; border-color: var(--brand); background: var(--brand); }
+  .button.danger { color: var(--brand-ink); }
+  .button.small { min-height: 36px; padding: 0 10px; font-size: .82rem; }
+  .button:disabled { opacity: .44; cursor: not-allowed; }
+  .count-chip {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--veil-1);
+    padding: 0 13px;
+    color: var(--muted);
+    font-weight: 720;
+  }
+  .count-chip strong { color: var(--ink); }
+
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .mon-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 8px 26px rgba(24, 34, 54, .055);
+    overflow: hidden;
+  }
+  .mon-card.selected { border-color: var(--brand-ring); box-shadow: 0 8px 28px var(--brand-halo); }
+  .mon-card-head {
+    min-height: 58px;
+    padding: 11px 14px 11px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(90deg, var(--surface), var(--surface-hover));
+  }
+  .mon-index {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--header);
+    color: white;
+    font-weight: 900;
+    letter-spacing: -.02em;
+  }
+  .mon-title { min-width: 0; }
+  .mon-title strong { display: block; font-size: .94rem; }
+  .mon-title span { display: block; color: var(--muted); font-size: .75rem; margin-top: 2px; }
+  .bring-toggle {
+    margin-left: auto;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: white;
+    padding: 0 11px;
+    font-size: .78rem;
+    font-weight: 820;
+    cursor: pointer;
+  }
+  .bring-toggle .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--chip-line); }
+  .bring-toggle.active { color: white; border-color: var(--brand); background: var(--brand); }
+  .bring-toggle.active .dot { background: white; }
+  .bring-toggle:disabled { opacity: .4; cursor: not-allowed; }
+  .icon-button {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+  .icon-button:hover { color: var(--brand); background: var(--surface-inset); }
+  .mon-card-head > .icon-button { margin-left: auto; }
+  .mon-card-body { padding: 15px; }
+  .field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 8px;
+    color: var(--ink-soft);
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+  }
+  .field-label span { font-weight: 650; letter-spacing: 0; text-transform: none; color: var(--faint); }
+  .type-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .type-field, .move-field {
+    min-width: 0;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--surface-soft);
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+  .type-field:hover, .move-field:hover { border-color: var(--line-hover); background: var(--surface); }
+  .type-field:disabled, .move-field:disabled { opacity: .48; cursor: not-allowed; background: var(--surface-inset); }
+  .type-field:disabled:hover, .move-field:disabled:hover { border-color: var(--line-strong); background: var(--surface-inset); }
+  .field-placeholder { color: var(--faint); font-size: .88rem; font-weight: 650; }
+  .chevron { color: var(--faint); font-size: .74rem; }
+  .moves-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .move-field { min-height: 44px; padding: 7px 8px; }
+  .move-field .field-placeholder { font-size: .78rem; }
+  .type-token {
+    min-width: 0;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: .82rem;
+    font-weight: 850;
+  }
+  .type-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--type-color); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .type-token .type-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .analysis-controls {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--veil-2);
+    padding: 12px;
+    box-shadow: 0 7px 20px rgba(24,34,54,.05);
+    margin-bottom: 14px;
+  }
+  .control-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .control-row + .control-row { margin-top: 10px; }
+  .control-label { min-width: 108px; color: var(--muted); font-size: .75rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+  .segmented {
+    display: inline-flex;
+    padding: 4px;
+    gap: 3px;
+    border-radius: 12px;
+    background: var(--surface-inset);
+  }
+  .segment {
+    min-height: 36px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    padding: 0 12px;
+    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .segment.active { color: var(--ink); background: var(--surface); box-shadow: 0 2px 7px rgba(21, 31, 48, .10); }
+  .segment:disabled { opacity: .42; cursor: not-allowed; }
+  .selected-strip { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+  .selection-mini {
+    position: relative;
+    width: 44px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--danger-line);
+    border-radius: 10px;
+    background: var(--danger-soft);
+    color: var(--danger-ink);
+    font-size: .82rem;
+    font-weight: 880;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(21,31,48,.05);
+    transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease;
+  }
+  .selection-mini:hover { transform: translateY(-1px); box-shadow: 0 5px 11px rgba(21,31,48,.10); }
+  .selection-mini.selected { color: var(--safe-ink); border-color: var(--safe-line); background: var(--safe-soft); }
+  .selection-mini:disabled { color: var(--faint); border-color: var(--line); background: var(--surface-inset); cursor: not-allowed; box-shadow: none; }
+  .selection-mini::after {
+    content: "";
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .65;
+  }
+  .selection-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mode-note { color: var(--muted); font-size: .78rem; }
+
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .summary-card {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--veil-3);
+    padding: 12px 13px;
+    box-shadow: 0 5px 16px rgba(24,34,54,.045);
+  }
+  .summary-label { display: block; color: var(--muted); font-size: .66rem; font-weight: 880; letter-spacing: .09em; text-transform: uppercase; }
+  .summary-value { display: block; margin-top: 5px; font-size: .88rem; font-weight: 880; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
+  .summary-value.positive { color: var(--safe-ink); }
+  .summary-value.negative { color: var(--danger-ink); }
+
+  .chart-panel {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .chart-panel-head {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(var(--surface), var(--surface-hover));
+  }
+  .chart-panel-head strong { display: block; font-size: .94rem; }
+  .chart-panel-head span { display: block; margin-top: 2px; color: var(--muted); font-size: .76rem; }
+  .chart-panel-head .swipe-hint { display: none; color: var(--muted); font-size: .72rem; font-weight: 750; }
+  .chart-scroll {
+    width: 100%;
+    overflow: auto;
+    max-height: min(780px, calc(100vh - 210px));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    background: white;
+  }
+  .matchup-table {
+    min-width: 1010px;
+    width: 100%;
+  }
+  .matchup-row {
+    display: grid;
+    grid-template-columns: var(--sticky-col) repeat(6, minmax(126px, 1fr)) var(--net-col);
+    min-height: 58px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .matchup-row:last-child { border-bottom: 0; }
+  .matchup-row.data-row:hover .matchup-cell { background-color: var(--surface-hover); }
+  .matchup-row.header-row {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    min-height: 64px;
+    color: white;
+    background: var(--header);
+    border-bottom: 0;
+  }
+  .matchup-cell {
+    min-width: 0;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-content: center;
+    border-right: 1px solid var(--line-soft);
+    background: white;
+    transition: background-color .12s ease;
+  }
+  .matchup-cell:last-child { border-right: 0; }
+  .header-row .matchup-cell { border-color: rgba(255,255,255,.10); background: var(--header); }
+  .sticky-type {
+    position: sticky;
+    left: 0;
+    z-index: 8;
+    box-shadow: 7px 0 12px rgba(21, 31, 48, .05);
+  }
+  .header-row .sticky-type { z-index: 14; }
+  .incoming-head { font-size: .68rem; font-weight: 900; letter-spacing: .10em; text-transform: uppercase; }
+  .bucket-head { display: block; width: 100%; text-align: center; }
+  .bucket-head strong { display: block; font-size: .78rem; }
+  .bucket-head span { display: block; margin-top: 3px; color: var(--on-header-dim); font-size: .65rem; font-weight: 700; }
+  .danger-zone { background: linear-gradient(180deg, var(--zone-danger), transparent); }
+  .safe-zone { background: linear-gradient(180deg, var(--zone-safe), transparent); }
+  .row-type {
+    width: 100%;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 5px;
+    font-size: .78rem;
+    font-weight: 880;
+  }
+  .row-type::before { content: ""; width: 9px; height: 25px; border-radius: 5px; background: var(--type-color); }
+  .marker {
+    position: relative;
+    width: 44px;
+    height: 30px;
+    flex: 0 0 44px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0;
+    display: inline-grid;
+    place-items: center;
+    font-size: .69rem;
+    font-weight: 920;
+    line-height: 1;
+    letter-spacing: -.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(21,31,48,.10);
+    transition: transform .12s ease, box-shadow .12s ease;
+    touch-action: manipulation;
+  }
+  .marker:hover { transform: translateY(-1px); box-shadow: 0 5px 12px rgba(21,31,48,.15); }
+  .marker.strong { color: var(--on-solid); background: var(--safe-solid); border-color: var(--safe-ink); }
+  .marker.good { color: var(--safe-ink); background: var(--safe-soft); border-color: var(--safe-line); }
+  .marker.neutral { color: var(--ink-soft); background: var(--chip); border-color: var(--chip-line); }
+  .marker.weak { color: var(--danger-ink); background: var(--danger-soft); border-color: var(--danger-line); }
+  .marker.bad { color: var(--on-solid); background: var(--danger); border-color: var(--danger-ink); }
+  .marker.na { color: var(--muted); background: var(--surface); border: 1px dashed var(--line-hover); box-shadow: none; }
+  .marker.move-type { background: var(--move-bg); color: var(--move-fg); border-color: var(--move-border); }
+  .marker .tie-count {
+    position: absolute;
+    right: -4px;
+    top: -5px;
+    min-width: 15px;
+    height: 15px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    color: white;
+    background: var(--header);
+    border: 2px solid white;
+    font-size: .54rem;
+  }
+  .net-cell { justify-content: center; background: var(--surface-hover); }
+  .net-tally {
+    min-width: 94px;
+    min-height: 34px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: var(--chip);
+    color: var(--ink-soft);
+    padding: 0 8px;
+    font-size: .72rem;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .net-tally.positive { color: var(--safe-ink); border-color: var(--safe-line); background: var(--safe-soft); }
+  .net-tally.negative { color: var(--danger-ink); border-color: var(--danger-line); background: var(--danger-soft); }
+
+  .quick-peek {
+    position: fixed;
+    z-index: 200;
+    max-width: min(260px, calc(100vw - 24px));
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 6px);
+    border-radius: 11px;
+    color: white;
+    background: var(--header-deep);
+    padding: 9px 11px;
+    box-shadow: 0 12px 34px rgba(14,22,36,.28);
+    font-size: .75rem;
+    font-weight: 760;
+    line-height: 1.35;
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  .quick-peek.show { opacity: 1; transform: translate(-50%, 0); }
+  .quick-peek::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 12px;
+    height: 12px;
+    background: var(--header-deep);
+    transform: translateX(-50%) rotate(45deg);
+  }
+  .quick-peek.below::after { top: -6px; bottom: auto; }
+
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0,1fr));
+    gap: 8px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-hover);
+  }
+  .legend-item {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: .72rem;
+    line-height: 1.25;
+  }
+  .legend-swatch { width: 26px; height: 18px; flex: 0 0 auto; border-radius: 999px; border: 1px solid var(--line-strong); }
+  .legend-swatch.strong { background: var(--safe); }
+  .legend-swatch.good { background: var(--safe-soft); }
+  .legend-swatch.neutral { background: var(--chip); }
+  .legend-swatch.weak { background: var(--danger-soft); }
+  .legend-swatch.bad { background: var(--danger); }
+  .legend-swatch.na { background: var(--surface); border-style: dashed; border-color: var(--faint); }
+
+  .empty-state, .engine-error {
+    padding: clamp(34px, 8vw, 80px) 24px;
+    text-align: center;
+  }
+  .empty-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    color: white;
+    background: var(--header);
+    font-size: 1.35rem;
+    font-weight: 900;
+  }
+  .empty-state h2, .engine-error h2 { margin: 0 0 7px; font-size: 1.2rem; }
+  .empty-state p, .engine-error p { margin: 0 auto 18px; max-width: 520px; color: var(--muted); line-height: 1.55; }
+  .engine-error .empty-icon { background: var(--danger); }
+
+  .engine-badge {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--safe-line);
+    border-radius: 999px;
+    background: var(--safe-tint);
+    color: var(--safe-ink);
+    padding: 0 10px;
+    font-size: .72rem;
+    font-weight: 820;
+    cursor: pointer;
+  }
+  .engine-badge.failed { color: var(--brand-ink); border-color: var(--danger-line); background: var(--danger-tint); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  dialog {
+    width: min(620px, calc(100vw - 28px));
+    max-height: min(820px, calc(100vh - 28px));
+    padding: 0;
+    border: 0;
+    border-radius: 20px;
+    color: var(--ink);
+    background: white;
+    box-shadow: 0 30px 90px rgba(15, 23, 38, .28);
+    overflow: hidden;
+  }
+  dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); }
+  .dialog-head {
+    min-height: 64px;
+    padding: 12px 14px 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .dialog-head div { min-width: 0; }
+  .dialog-head strong { display: block; }
+  .dialog-head span { display: block; margin-top: 3px; color: var(--muted); font-size: .75rem; }
+  .dialog-close { margin-left: auto; }
+  .dialog-body { padding: 16px 18px 20px; overflow: auto; max-height: calc(100vh - 120px); }
+  .type-picker-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .picker-type {
+    min-height: 47px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    background: var(--surface);
+    font-size: .82rem;
+    font-weight: 820;
+    cursor: pointer;
+  }
+  .picker-type:hover { border-color: var(--type-color); background: var(--surface-hover); }
+  .picker-type.active { border: 2px solid var(--type-color); padding: 7px 9px; }
+  .picker-type:disabled { opacity: .34; cursor: not-allowed; }
+  .picker-type .type-dot { width: 13px; height: 13px; }
+  .picker-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+  .detail-summary {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .detail-chip {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 10px;
+    background: var(--surface-sunk);
+    padding: 0 10px;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+  .detail-section { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+  .detail-section h3 { margin: 0 0 9px; font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+  .equation {
+    border-radius: 12px;
+    background: var(--surface-sunk);
+    padding: 12px;
+    font-size: .85rem;
+    line-height: 1.55;
+  }
+  .move-results { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  .move-results th, .move-results td { padding: 9px 7px; text-align: left; border-bottom: 1px solid var(--line); }
+  .move-results th { color: var(--muted); font-size: .68rem; letter-spacing: .07em; text-transform: uppercase; }
+  .move-results tr.best-row { background: var(--safe-tint); }
+  .move-results tr:last-child td { border-bottom: 0; }
+  .best-label { color: var(--safe); font-size: .68rem; font-weight: 900; text-transform: uppercase; }
+
+  .diagnostic-list { display: grid; gap: 9px; }
+  .diagnostic-item { display: flex; gap: 9px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-hover); }
+  .diagnostic-icon { color: var(--safe); font-weight: 950; }
+  .diagnostic-item.failed .diagnostic-icon { color: var(--danger); }
+  .diagnostic-item strong { display: block; font-size: .82rem; }
+  .diagnostic-item span { display: block; margin-top: 2px; color: var(--muted); font-size: .74rem; line-height: 1.4; }
+
+  .code-area {
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--surface-soft);
+    padding: 12px;
+    color: var(--ink-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .75rem;
+    line-height: 1.5;
+  }
+  .help-text { color: var(--muted); font-size: .76rem; line-height: 1.5; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    z-index: 100;
+    max-width: calc(100vw - 28px);
+    transform: translate(-50%, 20px);
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 13px;
+    background: var(--header);
+    color: white;
+    padding: 11px 13px;
+    box-shadow: 0 14px 40px rgba(14, 22, 36, .27);
+    transition: opacity .18s ease, transform .18s ease;
+    font-size: .82rem;
+    font-weight: 720;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .toast button { border: 0; border-radius: 8px; color: var(--header); background: var(--on-header); padding: 5px 8px; font-weight: 850; cursor: pointer; }
+
+  .caveat {
+    max-width: 62ch;
+    margin: 8px 0 0;
+    padding-left: 11px;
+    border-left: 3px solid var(--line-strong);
+    border-radius: 0;
+    color: var(--muted);
+    font-size: .82rem;
+    line-height: 1.45;
+  }
+
+  .exp-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .exp-head {
+    display: grid;
+    grid-template-columns: var(--exp-type-col) 1fr 2px 1fr var(--exp-net-col);
+    align-items: end;
+    gap: 8px;
+    padding: 11px 14px;
+    color: white;
+    background: var(--header);
+    font-size: .66rem;
+    font-weight: 900;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+  }
+  .exp-head .to-axis { text-align: right; }
+  .exp-head .to-net { text-align: right; }
+  .exp-rows { padding: 4px 0; }
+  .exp-row {
+    display: grid;
+    grid-template-columns: var(--exp-type-col) 1fr 2px 1fr var(--exp-net-col);
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .exp-row:last-child { border-bottom: 0; }
+  .exp-row:hover { background: var(--surface-hover); }
+  .exp-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: .76rem;
+    font-weight: 880;
+  }
+  .exp-chip::before { content: ""; width: 9px; height: 22px; border-radius: 5px; background: var(--type-color); }
+  .exp-left { display: flex; justify-content: flex-end; gap: 5px; flex-wrap: wrap; }
+  .exp-right { display: flex; justify-content: flex-start; gap: 5px; flex-wrap: wrap; }
+  .exp-axis { align-self: stretch; min-height: 28px; background: var(--line-strong); }
+  .exp-block {
+    width: 34px;
+    height: 26px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 0;
+    font-size: .68rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform .12s ease;
+  }
+  .exp-block:hover { transform: translateY(-1px); }
+  .exp-block.weak-2 { color: var(--danger-ink); background: var(--danger-soft); border-color: var(--danger-line); }
+  .exp-block.weak-4 { color: var(--on-deep); background: var(--danger-deep); border-color: var(--danger-deep-line); }
+  .exp-block.tier-resist { color: var(--on-solid); background: var(--safe-solid); border-color: var(--safe-ink); }
+  .exp-block.tier-neutral { color: var(--safe-ink); background: transparent; border-color: var(--safe); }
+  .exp-block.tier-weak { color: var(--amber-ink); background: var(--amber-soft); border-color: var(--amber-line); }
+  .exp-block.move-fill { background: var(--move-bg); color: var(--move-fg); border-color: var(--move-bg); }
+  .exp-block.ring-resist { outline: 2px solid var(--safe); outline-offset: -2px; }
+  .exp-block.ring-weak { outline: 2px solid var(--danger-deep); outline-offset: -2px; }
+  .exp-net {
+    text-align: right;
+    font-size: .76rem;
+    font-weight: 900;
+    color: var(--muted);
+  }
+  .exp-net.positive { color: var(--safe-ink); }
+  .exp-net.negative { color: var(--danger-ink); }
+  .exp-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 700;
+  }
+  .exp-legend .swatch {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-right: 6px;
+    border-radius: 5px;
+    border: 1px solid transparent;
+    vertical-align: -3px;
+  }
+
+  @media (max-width: 920px) {
+    .team-grid { grid-template-columns: 1fr; }
+    .legend { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .view-header { align-items: flex-start; flex-direction: column; }
+  }
+  @media (max-width: 700px) {
+    :root { --sticky-col: 84px; }
+    .topbar-inner { min-height: 66px; gap: 10px; }
+    .dex-mark { width: 38px; height: 38px; border-width: 3px; }
+    .brand-copy span { display: none; }
+    .brand-copy strong { font-size: .88rem; }
+    .nav-tab { min-height: 38px; padding: 0 11px; font-size: .78rem; }
+    main { padding: 18px 12px 30px; }
+    .view-header { margin-bottom: 16px; }
+    .toolbar { align-items: stretch; }
+    .toolbar-group { width: 100%; }
+    .toolbar-group .button { flex: 1 1 auto; }
+    .type-fields { grid-template-columns: 1fr 1fr; }
+    .moves-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .control-label { width: 100%; min-width: 0; }
+    .segmented { width: 100%; }
+    .segment { flex: 1; padding: 0 8px; }
+    .chart-panel-head .swipe-hint { display: block; }
+    :root { --net-col: 112px; --exp-type-col: 78px; --exp-net-col: 34px; }
+    .exp-head, .exp-row { padding-left: 9px; padding-right: 9px; gap: 5px; }
+    .exp-chip { font-size: .68rem; gap: 5px; }
+    .exp-chip::before { width: 7px; height: 19px; }
+    .exp-block { width: 27px; flex-basis: 27px; height: 23px; font-size: .62rem; }
+    .exp-left, .exp-right { gap: 3px; }
+    .matchup-table { min-width: 962px; }
+    .matchup-row { grid-template-columns: var(--sticky-col) repeat(6, minmax(112px, 1fr)) var(--net-col); }
+    .summary-strip {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(165px, 72vw);
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scroll-snap-type: x proximity;
+      scrollbar-width: thin;
+    }
+    .summary-card { scroll-snap-align: start; }
+    .legend { grid-template-columns: repeat(2, minmax(0,1fr)); padding: 12px; }
+    .chart-panel-head { align-items: flex-start; }
+    .type-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    dialog {
+      width: 100%;
+      max-height: min(88vh, 780px);
+      margin: auto 0 0;
+      border-radius: 20px 20px 0 0;
+    }
+    .dialog-body { padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+  }
+  @media (max-width: 390px) {
+    .brand-copy strong { max-width: 110px; line-height: 1.05; }
+    .nav-tab { padding: 0 9px; }
+    .type-fields { grid-template-columns: 1fr; }
+    .count-chip { width: 100%; justify-content: center; }
+    .legend { grid-template-columns: 1fr 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+  }
+</style>
+<style id="coffee-styles">
+  /* Web-only, injected by build-web.mjs from _web-parts/coffee-styles.html.
+     Lives in <head> alongside the app's own CSS: a <style> inside the (initially
+     hidden) coffee section does not get re-invalidated when :root custom
+     properties change, so a live theme toggle left the button on the light brand.
+     Scoped under .coffee-view so nothing leaks into the app. Colours are the
+     app's own tokens, so light, dark and system themes all follow for free. */
+  .coffee-view { max-width: 560px; margin: 0 auto; text-align: center; }
+  .coffee-view .cup { position: relative; width: 92px; height: 92px; margin: 0 auto 20px; }
+  .coffee-view .cup .steam { position: absolute; top: 2px; left: 0; right: 0; display: flex; justify-content: center; gap: 9px; }
+  .coffee-view .cup .steam span { width: 5px; height: 17px; background: var(--line-strong); border-radius: 999px; opacity: .75; animation: coffee-steam 2.4s ease-in-out infinite; }
+  .coffee-view .cup .steam span:nth-child(2) { animation-delay: .35s; }
+  .coffee-view .cup .steam span:nth-child(3) { animation-delay: .7s; }
+  @keyframes coffee-steam { 0%, 100% { transform: translateY(0); opacity: .28; } 50% { transform: translateY(-7px); opacity: .8; } }
+  .coffee-view .cup .mug { position: absolute; bottom: 0; left: 12px; right: 12px; height: 52px; background: var(--brand); border-radius: 8px 8px 22px 22px; }
+  .coffee-view .cup .mug::before { content: ''; position: absolute; inset: 0 0 auto; height: 9px; background: var(--brand-dark); border-radius: 8px 8px 0 0; }
+  .coffee-view .cup .handle { position: absolute; bottom: 14px; right: 0; width: 20px; height: 24px; border: 5px solid var(--brand); border-left: none; border-radius: 0 999px 999px 0; }
+  .coffee-view .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 28px 24px; }
+  .coffee-view .fund { font-size: 14px; line-height: 1.6; color: var(--muted); margin-bottom: 22px; }
+  .coffee-view .coffee-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--brand); color: white; text-decoration: none; font-size: 15px; font-weight: 700; padding: 13px 26px; border-radius: 10px; transition: background .15s ease; }
+  .coffee-view .coffee-btn:hover { background: var(--brand-lift); }
+  .coffee-view .coffee-btn:focus-visible { outline: 3px solid var(--brand-ring); outline-offset: 2px; }
+  .coffee-view .handle-line { margin-top: 22px; font-size: 14px; color: var(--ink-soft); }
+  .coffee-view .handle-line a { color: var(--brand-ink); font-weight: 600; }
+  .coffee-view .free-note { margin-top: 8px; font-size: 13px; color: var(--faint); }
+  @media (prefers-reduced-motion: reduce) { .coffee-view .cup .steam span { animation: none; } }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="tabbar">
-    <button id="tab-battle-btn" class="active" onclick="switchTab('battle')">Battle</button>
-    <button id="tab-squad-btn" onclick="switchTab('squad')">Squad</button>
-    <button id="tab-coffee-btn" onclick="switchTab('coffee')">Buy Me a Coffee ☕</button>
-  </div>
-
-  <!-- ============ BATTLE TAB ============ -->
-  <div id="tab-battle" class="tab active">
-    <div class="panel">
-      <div class="matchup-grid">
-        <!-- Row 1: Opponent -->
-        <span class="row-label">Opponent</span>
-        <button class="slot-btn empty" id="opp-t1" onclick="pickOpp(1)">Type 1</button>
-        <button class="slot-btn empty" id="opp-t2" onclick="pickOpp(2)">Type 2</button>
-        <button class="chart-btn" onclick="openChart()">📊 Type Chart</button>
-        <div class="matchup-divider"></div>
-        <!-- Row 2: Coverage -->
-        <span class="row-label" style="color:#7e3ff2;">
-          Coverage
-          <label class="cov-toggle" title="Model the opponent's coverage moves">
-            <input type="checkbox" id="cov-switch" onchange="toggleCoverage()">
-            <span class="cov-slider"></span>
-          </label>
-          <button class="info-icon" onclick="openCovInfo()" title="What's a coverage move?">i</button>
-        </span>
-        <button class="slot-btn empty" id="cov-1" onclick="pickCoverage(0)" style="display:none;">Cov 1</button>
-        <button class="slot-btn empty" id="cov-2" onclick="pickCoverage(1)" style="display:none;">Cov 2</button>
-        <button class="swap-btn" id="swap-btn" onclick="swapOppCoverage()" title="Swap Opponent ⇄ Coverage" style="display:none;">⇄ Switch</button>
-        <div class="matchup-divider"></div>
-        <!-- Row 3: Yours -->
-        <span class="row-label" style="color:#157a41;">Yours · P<span id="me-num">1</span></span>
-        <span class="slot-btn empty" id="me-t1" style="cursor:default;">—</span>
-        <span class="slot-btn empty" id="me-t2" style="cursor:default;">—</span>
-        <div></div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Select Pokémon</h2>
-      <div class="nav16" id="nav16"></div>
-      <div class="dot-row" id="attack-dots"></div>
-      <div class="dot-label">Attack</div>
-      <div class="dot-row" id="defence-dots"></div>
-      <div class="dot-label">Defence</div>
-    </div>
-
-    <div class="panel">
-      <h2>Moves — Pokémon <span id="sel-num">1</span></h2>
-      <div class="move-cards" id="move-cards"></div>
-    </div>
-
-    <div class="panel">
-      <div class="overlay-zone">
-        <div class="overlay offense" id="ov-offense">
-          <div class="overlay-label">OFFENSE — squad coverage · STAB shown for selected Pokémon's moves</div>
-          <div class="chip-grid" id="off-grid"></div>
-          <div class="overlay-hint" id="off-hint"></div>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand" aria-label="Pokémon Battle Adviser">
+        <div class="dex-mark" aria-hidden="true"></div>
+        <div class="brand-copy">
+          <strong>Battle Adviser</strong>
+          <span>VGC squad reference</span>
         </div>
-        <div class="overlay defense" id="ov-defense">
-          <div class="overlay-label">DEFENSE — incoming on selected Pokémon</div>
-          <div class="chip-grid" id="def-grid"></div>
-          <div class="overlay-hint" id="def-hint"></div>
+      </div>
+      <nav class="nav-tabs" aria-label="Main views">
+        <button class="nav-tab active" data-view="setup">Team setup</button>
+        <button class="nav-tab" data-view="analytics">Matchup grid</button>
+        <button class="nav-tab" data-view="exposure">Exposure</button>
+        <button class="nav-tab" data-view="coffee">Buy Me a Coffee ☕</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="setupView" class="view">
+      <div class="view-header">
+        <div>
+          <div class="eyebrow">Build the six</div>
+          <h1>Set up your type profile</h1>
+          <p class="lede">Enter each Pokémon's typing and up to four move types. Names, stats and move power are intentionally excluded so the analysis stays focused on type matchups.</p>
+          <p class="caveat">Abilities are not modelled. Levitate, Water Absorb, Flash Fire and similar will make a real battle disagree with these numbers.</p>
+        </div>
+        <button id="goAnalyticsButton" class="button primary">Open analytics</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <div class="count-chip"><strong id="configuredCount">0 / 6</strong> configured</div>
+          <div class="count-chip"><strong id="selectedCount">0</strong> selected for analysis</div>
+        </div>
+        <div class="toolbar-group">
+          <button id="loadDemoButton" class="button">Load demo</button>
+          <button id="teamCodeButton" class="button">Team code</button>
+          <button id="undoButton" class="button" hidden>Undo clear</button>
+          <button id="clearTeamButton" class="button danger">Clear squad</button>
         </div>
       </div>
 
-      <div class="eff-bar">
-        <div class="eff-col c-4">4×<small>quad</small></div>
-        <div class="eff-col c-3">3×<small>stab·se</small></div>
-        <div class="eff-col c-2">2×<small>super</small></div>
-        <div class="eff-col c-15">1.5×<small>stab</small></div>
-        <div class="eff-col c-1">1×<small>neutral</small></div>
-        <div class="eff-col c-05">0.5×<small>resist</small></div>
-        <div class="eff-col c-0">0×<small>immune</small></div>
+      <div id="teamGrid" class="team-grid"></div>
+    </section>
+
+    <section id="analyticsView" class="view" hidden>
+      <div class="view-header">
+        <div>
+          <div class="eyebrow">Type matchup map</div>
+          <h1>See who takes the hit — and who hits back</h1>
+          <p class="lede">Horizontal position is defensive. Marker colour is the best offensive result from the move types you entered, with 1.5× STAB applied automatically.</p>
+        </div>
+        <button id="backToSetupButton" class="button">Edit team</button>
       </div>
 
-      <div class="toggles" style="margin-top:14px;">
-        <button id="tg-off" class="offense" onclick="toggle('offense')">OFFENSE</button>
-        <button id="tg-def" class="defense" onclick="toggle('defense')">DEFENSE</button>
+      <div class="analysis-controls">
+        <div class="control-row">
+          <div class="control-label">Team view</div>
+          <div class="segmented" role="group" aria-label="Team analysis mode">
+            <button class="segment active" data-analysis-mode="six">Full squad</button>
+            <button id="selectionModeButton" class="segment" data-analysis-mode="selection">Selection</button>
+          </div>
+          <span id="selectionModeNote" class="mode-note"></span>
+        </div>
+        <div class="control-row">
+          <div class="control-label">Analyse subset</div>
+          <div id="selectedStrip" class="selected-strip" role="group" aria-label="Select Pokémon for subset analysis"></div>
+          <div class="selection-actions">
+            <button id="clearSelectionButton" class="button small danger">Clear selection</button>
+          </div>
+        </div>
+        <div class="control-row">
+          <div class="control-label">Offence display</div>
+          <div class="segmented" role="group" aria-label="Offensive marker display">
+            <button class="segment active" data-display-mode="effectiveness">Effectiveness colours</button>
+            <button class="segment" data-display-mode="moves">Show best move type</button>
+          </div>
+          <button id="jumpNeutralButton" class="button small">Jump to neutral</button>
+          <button id="diagnosticsButton" class="engine-badge"><span class="status-dot"></span><span id="engineBadgeText">Checking type engine…</span></button>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ============ SQUAD TAB ============ -->
-  <div id="tab-squad" class="tab">
-    <div class="panel">
-      <div class="squad-head-row">
-        <h2>Your Squad — types only, auto-saved</h2>
-        <button id="clear-squad-btn" class="clear-squad-btn" onclick="clearOrUndo()">Clear Squad</button>
+      <div id="analyticsContent"></div>
+    </section>
+
+    <section id="exposureView" class="view" hidden>
+      <div class="view-header">
+        <div>
+          <div class="eyebrow">Exposure and answers</div>
+          <h1>How many of mine hit this type hard?</h1>
+          <p class="lede">Left of the axis is exposure, the slots that take 2× or more. Right is answers, the slots whose best entered move lands 2× or more. Every block is one Pokémon, so bar length is a straight count.</p>
+          <p class="caveat">Net is a raw count, so a 4× liability weighs the same as a 2× and an answer that folds in return still counts. Abilities are not modelled.</p>
+        </div>
+        <button id="exposureEditButton" class="button">Edit team</button>
       </div>
-      <div class="squad-grid" id="squad-grid"></div>
+
+      <div class="analysis-controls">
+        <div class="control-row">
+          <div class="control-label">Block colour</div>
+          <div class="segmented" role="group" aria-label="Answer block colour">
+            <button class="segment" data-chart-colour="defence">Defence tier</button>
+            <button class="segment" data-chart-colour="move">Move type</button>
+          </div>
+          <span class="mode-note">Defence tier shows whether the answering slot survives. Move type shows which move does the work.</span>
+        </div>
+        <div class="control-row">
+          <div class="control-label">Row order</div>
+          <div class="segmented" role="group" aria-label="Row sort order">
+            <button class="segment" data-chart-sort="net">Worst net first</button>
+            <button class="segment" data-chart-sort="type">Type order</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="exposureContent"></div>
+    </section>
+
+    <!-- ============ COFFEE VIEW ============ -->
+    <!-- Web-only. Source of truth: battle-adviser/_web-parts/coffee-view.html.
+         This block does not exist in pokemon-analytics/app.html — build-web.mjs
+         injects it at deploy time. Do not hand-edit it in the built page.
+         Styles live in <head>, from _web-parts/coffee-styles.html. -->
+    <section id="coffeeView" class="view" hidden>
+      <div class="view-header">
+        <div>
+          <div class="eyebrow">Support</div>
+          <h1>Enjoying the tool?</h1>
+          <p class="lede">This app is free and always will be. If it has helped you build a better team, a small tip means a lot.</p>
+        </div>
+      </div>
+
+      <div class="coffee-view">
+        <div class="panel">
+          <div class="cup" aria-hidden="true">
+            <div class="steam"><span></span><span></span><span></span></div>
+            <div class="mug"></div>
+            <div class="handle"></div>
+          </div>
+          <p class="fund">Tips fund my puppy's next chew toy! 🐶</p>
+          <!-- STRIPE PAYMENT LINK — currently TEST mode. Swap for the live URL before relying on it. -->
+          <a class="coffee-btn" href="https://buy.stripe.com/test_28EbJ15LsfhyciS0I373G00" target="_blank" rel="noopener">Support the Battle Adviser →</a>
+          <div class="handle-line">Find me on Instagram <a href="https://instagram.com/battle_adviser" target="_blank" rel="noopener">@battle_adviser</a></div>
+          <div class="free-note">No account, no nags — tip only if you want to.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="typePickerDialog" aria-labelledby="typePickerTitle">
+  <div class="dialog-head">
+    <div>
+      <strong id="typePickerTitle">Choose a type</strong>
+      <span id="typePickerSubtitle"></span>
+    </div>
+    <button class="icon-button dialog-close" data-close-dialog="typePickerDialog" aria-label="Close">✕</button>
+  </div>
+  <div class="dialog-body">
+    <div id="typePickerGrid" class="type-picker-grid"></div>
+    <div class="picker-actions">
+      <button id="clearPickerValue" class="button danger" hidden>Clear this field</button>
+      <button class="button" data-close-dialog="typePickerDialog">Cancel</button>
     </div>
   </div>
+</dialog>
 
-  <!-- ============ COFFEE TAB ============ -->
-  <!-- Region between the markers is owned by Coffee Page/coffee-page.html.
-       Re-run assembly to update it; do not hand-edit app logic inside here. -->
-  <div id="tab-coffee" class="tab">
-<!-- COFFEE TAB START -->
-<style id="coffee-styles">
-  /* All selectors scoped under .coffee-tab so nothing leaks into the app. */
-  .coffee-tab { text-align: center; padding: 28px 20px 34px; }
-  .coffee-tab .cup { width: 96px; height: 96px; margin: 4px auto 18px; position: relative; }
-  .coffee-tab .cup .steam { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
-  .coffee-tab .cup .steam span { width: 5px; height: 18px; background: #cfd5dd; border-radius: 999px; opacity: .8; animation: coffee-steam 2.4s ease-in-out infinite; }
-  .coffee-tab .cup .steam span:nth-child(2) { animation-delay: .5s; height: 22px; }
-  .coffee-tab .cup .steam span:nth-child(3) { animation-delay: 1s; }
-  @keyframes coffee-steam { 0%,100% { transform: translateY(0); opacity: .3; } 50% { transform: translateY(-6px); opacity: .85; } }
-  .coffee-tab .cup .mug { position: absolute; bottom: 0; left: 8px; width: 64px; height: 52px; background: #1a1a2e; border-radius: 8px 8px 14px 14px; }
-  .coffee-tab .cup .mug::before { content: ''; position: absolute; top: 7px; left: 7px; right: 7px; height: 9px; background: #6f4e37; border-radius: 4px; }
-  .coffee-tab .cup .handle { position: absolute; bottom: 14px; right: 6px; width: 22px; height: 26px; border: 7px solid #1a1a2e; border-left: none; border-radius: 0 14px 14px 0; }
-  .coffee-tab h3 { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 10px; }
-  .coffee-tab .blurb { font-size: 14px; line-height: 1.55; color: #5b6472; max-width: 420px; margin: 0 auto 6px; }
-  .coffee-tab .fund { font-size: 14px; line-height: 1.55; color: #3a4150; max-width: 420px; margin: 0 auto 22px; font-weight: 600; }
-  .coffee-tab .fund .paw { font-style: normal; }
-  .coffee-tab .coffee-btn { display: inline-flex; align-items: center; gap: 8px; background: #1a1a2e; color: #fff; border: none; padding: 12px 22px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; transition: background .15s; }
-  .coffee-tab .coffee-btn:hover { background: #2d2d44; }
-  .coffee-tab .handle-line { margin-top: 20px; font-size: 13px; color: #8a93a2; }
-  .coffee-tab .handle-line a { color: #5b6472; font-weight: 700; text-decoration: none; }
-  .coffee-tab .handle-line a:hover { text-decoration: underline; }
-  .coffee-tab .free-note { margin-top: 4px; font-size: 12px; color: #aeb6c2; }
-</style>
-
-<div class="panel">
-  <div class="coffee-tab">
-    <div class="cup" aria-hidden="true">
-      <div class="steam"><span></span><span></span><span></span></div>
-      <div class="mug"></div>
-      <div class="handle"></div>
+<dialog id="detailDialog" aria-labelledby="detailTitle">
+  <div class="dialog-head">
+    <div>
+      <strong id="detailTitle">Matchup detail</strong>
+      <span id="detailSubtitle"></span>
     </div>
-    <h3>Enjoying the tool?</h3>
-    <p class="blurb">This app is free and always will be. If it's helped you build a better team, a small tip means a lot.</p>
-    <p class="fund">Tips fund my puppy's next chew toy! <span class="paw">🐶</span></p>
-    <!-- STRIPE PAYMENT LINK — currently TEST mode. Swap for live URL before public launch. -->
-    <a class="coffee-btn" href="https://buy.stripe.com/test_28EbJ15LsfhyciS0I373G00" target="_blank" rel="noopener">Support the Battle Adviser →</a>
-    <div class="handle-line">Find me on Instagram <a href="https://instagram.com/battle_adviser" target="_blank" rel="noopener">@battle_adviser</a></div>
-    <div class="free-note">No account, no nags — tip only if you want to.</div>
+    <button class="icon-button dialog-close" data-close-dialog="detailDialog" aria-label="Close">✕</button>
   </div>
-</div>
-<!-- COFFEE TAB END -->
-  </div>
-</div>
+  <div id="detailBody" class="dialog-body"></div>
+</dialog>
 
-<!-- one-shot toast (Clear Squad joke / status) -->
-<div id="toast" class="toast" onclick="hideToast()"></div>
-
-<!-- Type picker overlay -->
-<div class="modal-back" id="picker-back" onclick="if(event.target===this)closePicker()">
-  <div class="picker">
-    <h3 id="picker-title">Select a type</h3>
-    <div class="type-grid" id="picker-grid"></div>
-  </div>
-</div>
-
-<!-- Type chart modal -->
-<div class="modal-back" id="chart-back" onclick="if(event.target===this)closeChart()">
-  <div class="chart-modal">
-    <div class="ch-head">
-      <h3>Type Effectiveness Chart</h3>
-      <button class="x" onclick="closeChart()">✕</button>
+<dialog id="diagnosticsDialog" aria-labelledby="diagnosticsTitle">
+  <div class="dialog-head">
+    <div>
+      <strong id="diagnosticsTitle">Type engine diagnostics</strong>
+      <span>Automated checks run every time this file opens.</span>
     </div>
-    <div class="legend">Rows = attacking type, columns = defending type. <b style="color:#14601f">2×</b> · <b style="color:#9c3517">½×</b> · <b style="color:#3a3a3a">0×</b> · blank = 1×</div>
-    <div class="chart-scroll" id="chart-scroll"></div>
-    <div class="tc-note">Hover-free reference. Dual-type defenders = multiply the two columns.</div>
+    <button class="icon-button dialog-close" data-close-dialog="diagnosticsDialog" aria-label="Close">✕</button>
   </div>
-</div>
+  <div id="diagnosticsBody" class="dialog-body"></div>
+</dialog>
 
-<!-- Coverage info modal -->
-<div class="modal-back" id="cov-info-back" onclick="if(event.target===this)closeCovInfo()">
-  <div class="picker" style="max-width:480px;">
-    <div class="ch-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <h3 style="margin:0;">Coverage moves</h3>
-      <button class="x" onclick="closeCovInfo()">✕</button>
+<dialog id="teamCodeDialog" aria-labelledby="teamCodeTitle">
+  <div class="dialog-head">
+    <div>
+      <strong id="teamCodeTitle">Move a team between devices</strong>
+      <span>Copy this compact code from your computer and import it on your phone.</span>
     </div>
-    <p style="font-size:13px;line-height:1.55;color:#3a4150;margin:0;">When evaluating an opponent's Pokémon, the app should check whether your input includes coverage against you — i.e. at least one move that hits your typing effectively, outside of what their STAB alone would threaten. The app would flag if the opponent has a coverage move: a move that resists or bypasses your natural defensive typing, meaning they can punish you for staying in even when the matchup looks favourable on paper.</p>
+    <button class="icon-button dialog-close" data-close-dialog="teamCodeDialog" aria-label="Close">✕</button>
   </div>
-</div>
+  <div class="dialog-body">
+    <textarea id="teamCodeArea" class="code-area" spellcheck="false" aria-label="Team code"></textarea>
+    <p class="help-text">The code contains only the six type and move-type configurations plus your current selection. It does not use a server.</p>
+    <div class="picker-actions">
+      <button id="copyTeamCodeButton" class="button">Copy code</button>
+      <button id="importTeamCodeButton" class="button primary">Import code</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="quickPeek" class="quick-peek" role="tooltip" aria-hidden="true"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"><span id="toastMessage"></span><button id="toastAction" hidden></button></div>
 
 <script>
-/* ===================== DATA ===================== */
-const TYPES = ["Normal","Fire","Water","Grass","Electric","Ice","Fighting","Poison",
-  "Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel","Fairy"];
+/* inlined from ../Pokemon_Type_Engine/src/type-engine.js */
+/*
+ * Pokémon Type Engine
+ * Canonical type data and matchup maths. No UI, no framework, no dependencies.
+ *
+ * SCOPE
+ *   Type matchups only. This engine knows nothing about Pokémon names, base stats,
+ *   move names, move power, items, weather, terrain or abilities.
+ *   Abilities are deliberately NOT modelled. Levitate, Water Absorb, Wonder Guard and
+ *   friends will make a real battle disagree with this engine. Say so in any UI you build.
+ *
+ * LOADING
+ *   Deliberately NOT an ES module, so the same file works in all three places:
+ *     Node      require("./src/type-engine.js")
+ *     Local dev <script src="../src/type-engine.js"><\/script>
+ *     Artifact  paste this file's body inside a <script> tag
+ *   Do not convert this to `export`. It breaks the artifact path, which cannot load
+ *   external scripts under the published CSP.
+ */
+(function (root, factory) {
+  "use strict";
+  var api = factory();
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  if (root) root.PokemonTypeEngine = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
 
-const TYPE_COLORS = {
-  Normal:'#A8A878', Fire:'#F08030', Water:'#6890F0', Grass:'#78C850', Electric:'#F8D030',
-  Ice:'#98D8D8', Fighting:'#C03028', Poison:'#A040A0', Ground:'#E0C068', Flying:'#A890F0',
-  Psychic:'#F85888', Bug:'#A8B820', Rock:'#B8A038', Ghost:'#705898', Dragon:'#7038F8',
-  Dark:'#705848', Steel:'#B8B8D0', Fairy:'#EE99AC'
-};
+  /* ===================================================================
+   * CANONICAL DATA
+   * =================================================================== */
 
-// ATTACK_CHART[attackingType][defendingType] = multiplier (non-1 only)
-const ATTACK_CHART = {
-  Normal:   { Rock: 0.5, Steel: 0.5, Ghost: 0 },
-  Fire:     { Fire: 0.5, Water: 0.5, Rock: 0.5, Dragon: 0.5, Grass: 2, Ice: 2, Bug: 2, Steel: 2 },
-  Water:    { Water: 0.5, Grass: 0.5, Dragon: 0.5, Fire: 2, Ground: 2, Rock: 2 },
-  Grass:    { Fire: 0.5, Grass: 0.5, Poison: 0.5, Flying: 0.5, Bug: 0.5, Dragon: 0.5, Steel: 0.5, Water: 2, Ground: 2, Rock: 2 },
-  Electric: { Grass: 0.5, Electric: 0.5, Dragon: 0.5, Ground: 0, Water: 2, Flying: 2 },
-  Ice:      { Fire: 0.5, Water: 0.5, Ice: 0.5, Steel: 0.5, Grass: 2, Ground: 2, Flying: 2, Dragon: 2 },
-  Fighting: { Poison: 0.5, Flying: 0.5, Psychic: 0.5, Bug: 0.5, Fairy: 0.5, Ghost: 0, Normal: 2, Ice: 2, Rock: 2, Dark: 2, Steel: 2 },
-  Poison:   { Poison: 0.5, Ground: 0.5, Rock: 0.5, Ghost: 0.5, Steel: 0, Grass: 2, Fairy: 2 },
-  Ground:   { Grass: 0.5, Bug: 0.5, Flying: 0, Fire: 2, Electric: 2, Poison: 2, Rock: 2, Steel: 2 },
-  Flying:   { Electric: 0.5, Rock: 0.5, Steel: 0.5, Grass: 2, Fighting: 2, Bug: 2 },
-  Psychic:  { Psychic: 0.5, Steel: 0.5, Dark: 0, Fighting: 2, Poison: 2 },
-  Bug:      { Fire: 0.5, Fighting: 0.5, Poison: 0.5, Flying: 0.5, Ghost: 0.5, Steel: 0.5, Fairy: 0.5, Grass: 2, Psychic: 2, Dark: 2 },
-  Rock:     { Fighting: 0.5, Ground: 0.5, Steel: 0.5, Fire: 2, Ice: 2, Flying: 2, Bug: 2 },
-  Ghost:    { Dark: 0.5, Normal: 0, Ghost: 2, Psychic: 2 },
-  Dragon:   { Steel: 0.5, Fairy: 0, Dragon: 2 },
-  Dark:     { Fighting: 0.5, Dark: 0.5, Fairy: 0.5, Psychic: 2, Ghost: 2 },
-  Steel:    { Fire: 0.5, Water: 0.5, Electric: 0.5, Steel: 0.5, Ice: 2, Rock: 2, Fairy: 2 },
-  Fairy:    { Fire: 0.5, Poison: 0.5, Steel: 0.5, Fighting: 2, Dragon: 2, Dark: 2 }
-};
-
-/* ===================== LOGIC ===================== */
-function getEffectiveness(attackType, defType1, defType2) {
-  if (!attackType || !defType1) return 1;
-  const chart = ATTACK_CHART[attackType] || {};
-  const m1 = (defType1 in chart) ? chart[defType1] : 1;
-  const m2 = defType2 ? ((defType2 in chart) ? chart[defType2] : 1) : 1;
-  return m1 * m2;
-}
-
-// Map an effective multiplier to one of the 7 column indices [4,3,2,1.5,1,0.5,0]
-function columnFor(v) {
-  if (v === 0) return 6;        // 0× column
-  if (v < 0.875) return 5;      // 0.5× (covers 0.25, 0.375, 0.5, 0.75-STAB)
-  if (v < 1.25) return 4;       // 1×
-  if (v < 1.75) return 3;       // 1.5× (1×STAB)
-  if (v < 2.5) return 2;        // 2×
-  if (v < 3.5) return 1;        // 3× (2×STAB)
-  return 0;                     // 4× and above (4×, 4×STAB=6)
-}
-
-function fmtMult(v) {
-  if (v === 0) return '0×';
-  if (Number.isInteger(v)) return v + '×';
-  return (Math.round(v * 100) / 100).toString().replace(/\.?0+$/,'') + '×';
-}
-
-function textColor(hex) {
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#1a1a1a' : '#ffffff';
-}
-
-/* ===================== STATE ===================== */
-const SQUAD_KEY = 'pba_squad';
-let state = {
-  squad: null,
-  oppType1: null,
-  oppType2: null,
-  offense: false,
-  defense: false,
-  coverageOn: false,
-  coverage: [null, null],
-  selected: 0  // 0-indexed slot for Battle nav
-};
-
-// Link's saved squad — used as the default preset on first load / when storage is empty.
-// Returns fresh literals each call so per-slot edits never mutate a shared constant.
-function defaultSquad() {
-  return [
-    { slot: 1, type1: 'Psychic', type2: 'Flying', moves: ['Flying', 'Rock', 'Normal', 'Fighting'] },
-    { slot: 2, type1: 'Ground',  type2: 'Steel',  moves: ['Steel', 'Rock', 'Normal', 'Ground'] },
-    { slot: 3, type1: 'Dragon',  type2: 'Poison', moves: ['Poison', 'Fire', 'Dragon', 'Dragon'] },
-    { slot: 4, type1: 'Psychic', type2: 'Fairy',  moves: ['Fairy', 'Fairy', 'Psychic', 'Fire'] },
-    { slot: 5, type1: 'Water',   type2: 'Flying', moves: ['Water', 'Ice', 'Dark', 'Dragon'] },
-    { slot: 6, type1: 'Fire',    type2: null,     moves: ['Fire', 'Fire', 'Fighting', 'Normal'] }
+  /*
+   * FROZEN ORDER. EXPECTED_MATRIX below is indexed positionally against this array.
+   * Reordering TYPES without reordering both axes of EXPECTED_MATRIX silently
+   * validates the wrong cells. The prior "Battle Advisor" build used a different
+   * order (Grass before Electric), which is why the two builds could not share data.
+   */
+  var TYPES = [
+    "Normal", "Fire", "Water", "Electric", "Grass", "Ice",
+    "Fighting", "Poison", "Ground", "Flying", "Psychic", "Bug",
+    "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy"
   ];
-}
-function loadSquad() {
-  try {
-    const raw = localStorage.getItem(SQUAD_KEY);
-    if (!raw) return defaultSquad();
-    const arr = JSON.parse(raw);
-    if (!Array.isArray(arr) || arr.length !== 6) return defaultSquad();
-    return arr.map((s, i) => ({
-      slot: i + 1,
-      type1: s.type1 ?? null,
-      type2: s.type2 ?? null,
-      moves: Array.isArray(s.moves) ? [0,1,2,3].map(j => s.moves[j] ?? null) : [null,null,null,null]
-    }));
-  } catch (e) { return defaultSquad(); }
-}
-function saveSquad() {
-  localStorage.setItem(SQUAD_KEY, JSON.stringify(state.squad));
-}
 
-/* ===================== CLEAR / UNDO SQUAD ===================== */
-// In-memory only: the pre-clear squad, recoverable until the next edit/tab-switch/reload.
-let undoSnapshot = null;
-function emptySquad() {
-  return [1,2,3,4,5,6].map(n => ({ slot: n, type1: null, type2: null, moves: [null,null,null,null] }));
-}
-// Stop offering Undo — called whenever the cleared state is no longer the freshest action.
-function invalidateUndo() {
-  if (undoSnapshot) { undoSnapshot = null; updateClearBtn(); }
-}
-function updateClearBtn() {
-  const b = document.getElementById('clear-squad-btn');
-  if (!b) return;
-  b.textContent = undoSnapshot ? 'Undo' : 'Clear Squad';
-  b.classList.toggle('undo', !!undoSnapshot);
-}
-function clearOrUndo() {
-  if (undoSnapshot) {                       // Undo: restore what we backed up
-    state.squad = undoSnapshot;
-    undoSnapshot = null;
-  } else {                                  // Clear: back up, then wipe
-    undoSnapshot = JSON.parse(JSON.stringify(state.squad));
-    state.squad = emptySquad();
-    showToast("Squad cleared. (Irreversible unless you clear your browser history 😏) — hit Undo to bring it back.");
+  /* Human-readable source of truth, written as relationships. */
+  var TYPE_RELATIONS = {
+    Normal:   { strong: [], weak: ["Rock", "Steel"], immune: ["Ghost"] },
+    Fire:     { strong: ["Grass", "Ice", "Bug", "Steel"], weak: ["Fire", "Water", "Rock", "Dragon"], immune: [] },
+    Water:    { strong: ["Fire", "Ground", "Rock"], weak: ["Water", "Grass", "Dragon"], immune: [] },
+    Electric: { strong: ["Water", "Flying"], weak: ["Electric", "Grass", "Dragon"], immune: ["Ground"] },
+    Grass:    { strong: ["Water", "Ground", "Rock"], weak: ["Fire", "Grass", "Poison", "Flying", "Bug", "Dragon", "Steel"], immune: [] },
+    Ice:      { strong: ["Grass", "Ground", "Flying", "Dragon"], weak: ["Fire", "Water", "Ice", "Steel"], immune: [] },
+    Fighting: { strong: ["Normal", "Ice", "Rock", "Dark", "Steel"], weak: ["Poison", "Flying", "Psychic", "Bug", "Fairy"], immune: ["Ghost"] },
+    Poison:   { strong: ["Grass", "Fairy"], weak: ["Poison", "Ground", "Rock", "Ghost"], immune: ["Steel"] },
+    Ground:   { strong: ["Fire", "Electric", "Poison", "Rock", "Steel"], weak: ["Grass", "Bug"], immune: ["Flying"] },
+    Flying:   { strong: ["Grass", "Fighting", "Bug"], weak: ["Electric", "Rock", "Steel"], immune: [] },
+    Psychic:  { strong: ["Fighting", "Poison"], weak: ["Psychic", "Steel"], immune: ["Dark"] },
+    Bug:      { strong: ["Grass", "Psychic", "Dark"], weak: ["Fire", "Fighting", "Poison", "Flying", "Ghost", "Steel", "Fairy"], immune: [] },
+    Rock:     { strong: ["Fire", "Ice", "Flying", "Bug"], weak: ["Fighting", "Ground", "Steel"], immune: [] },
+    Ghost:    { strong: ["Psychic", "Ghost"], weak: ["Dark"], immune: ["Normal"] },
+    Dragon:   { strong: ["Dragon"], weak: ["Steel"], immune: ["Fairy"] },
+    Dark:     { strong: ["Psychic", "Ghost"], weak: ["Fighting", "Dark", "Fairy"], immune: [] },
+    Steel:    { strong: ["Ice", "Rock", "Fairy"], weak: ["Fire", "Water", "Electric", "Steel"], immune: [] },
+    Fairy:    { strong: ["Fighting", "Dragon", "Dark"], weak: ["Fire", "Poison", "Steel"], immune: [] }
+  };
+
+  /*
+   * DELIBERATE DUPLICATION. Do not "DRY" this away.
+   *
+   * EXPECTED_MATRIX is an independent transcription of the same 18x18 chart, written
+   * as raw numbers rather than as relationships. TYPE_RELATIONS and EXPECTED_MATRIX
+   * are cross-checked against each other in test/engine.test.js. A typo in either one
+   * makes them disagree and fails the suite loudly.
+   *
+   * Collapsing them into a single source removes the only mechanism that proves the
+   * dataset is correct, which is the entire reason this engine exists.
+   *
+   * Rows are attacking types, columns are defending types, both in TYPES order.
+   */
+  var EXPECTED_MATRIX = [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, .5, 0, 1, 1, .5, 1],
+    [1, .5, .5, 1, 2, 2, 1, 1, 1, 1, 1, 2, .5, 1, .5, 1, 2, 1],
+    [1, 2, .5, 1, .5, 1, 1, 1, 2, 1, 1, 1, 2, 1, .5, 1, 1, 1],
+    [1, 1, 2, .5, .5, 1, 1, 1, 0, 2, 1, 1, 1, 1, .5, 1, 1, 1],
+    [1, .5, 2, 1, .5, 1, 1, .5, 2, .5, 1, .5, 2, 1, .5, 1, .5, 1],
+    [1, .5, .5, 1, 2, .5, 1, 1, 2, 2, 1, 1, 1, 1, 2, 1, .5, 1],
+    [2, 1, 1, 1, 1, 2, 1, .5, 1, .5, .5, .5, 2, 0, 1, 2, 2, .5],
+    [1, 1, 1, 1, 2, 1, 1, .5, .5, 1, 1, 1, .5, .5, 1, 1, 0, 2],
+    [1, 2, 1, 2, .5, 1, 1, 2, 1, 0, 1, .5, 2, 1, 1, 1, 2, 1],
+    [1, 1, 1, .5, 2, 1, 2, 1, 1, 1, 1, 2, .5, 1, 1, 1, .5, 1],
+    [1, 1, 1, 1, 1, 1, 2, 2, 1, 1, .5, 1, 1, 1, 1, 0, .5, 1],
+    [1, .5, 1, 1, 2, 1, .5, .5, 1, .5, 2, 1, 1, .5, 1, 2, .5, .5],
+    [1, 2, 1, 1, 1, 2, .5, 1, .5, 2, 1, 2, 1, 1, 1, 1, .5, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, .5, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, .5, 0],
+    [1, 1, 1, 1, 1, 1, .5, 1, 1, 1, 2, 1, 1, 2, 1, .5, 1, .5],
+    [1, .5, .5, .5, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, .5, 2],
+    [1, .5, 1, 1, 1, 1, 2, .5, 1, 1, 1, 1, 1, 1, 2, 2, .5, 1]
+  ];
+
+  function buildTypeChart() {
+    var chart = {};
+    for (var i = 0; i < TYPES.length; i++) {
+      var attackType = TYPES[i];
+      var relation = TYPE_RELATIONS[attackType];
+      chart[attackType] = {};
+      for (var j = 0; j < TYPES.length; j++) {
+        var defendingType = TYPES[j];
+        var value = 1;
+        if (relation.immune.indexOf(defendingType) !== -1) value = 0;
+        else if (relation.strong.indexOf(defendingType) !== -1) value = 2;
+        else if (relation.weak.indexOf(defendingType) !== -1) value = .5;
+        chart[attackType][defendingType] = value;
+      }
+    }
+    return chart;
   }
-  saveSquad();
-  renderSquad();
-}
-let toastTimer = null;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(hideToast, 6000);
-}
-function hideToast() {
-  const t = document.getElementById('toast');
-  if (t) t.classList.remove('show');
-}
 
-/* ===================== TYPE PICKER ===================== */
-let pickerCb = null;
-function openPicker(title, allowNone, cb) {
-  pickerCb = cb;
-  document.getElementById('picker-title').textContent = title;
-  const grid = document.getElementById('picker-grid');
-  grid.innerHTML = '';
-  if (allowNone) {
-    const b = document.createElement('button');
-    b.className = 'none-btn';
-    b.textContent = 'None';
-    b.onclick = () => { pickerCb && pickerCb(null); closePicker(); };
-    grid.appendChild(b);
+  var TYPE_CHART = buildTypeChart();
+
+  var STAB_MULTIPLIER = 1.5;
+
+  /* ===================================================================
+   * CORE PRIMITIVE
+   *
+   * Defence and offence are the same operation: one attacking type against
+   * one or two defending types. Everything below composes from `multiplier`.
+   * =================================================================== */
+
+  function effectiveness(attackType, defendingType) {
+    if (!TYPE_CHART[attackType] || TYPE_CHART[attackType][defendingType] === undefined) {
+      throw new Error("Unknown matchup: " + attackType + " -> " + defendingType);
+    }
+    return TYPE_CHART[attackType][defendingType];
   }
-  TYPES.forEach(t => {
-    const b = document.createElement('button');
-    b.textContent = t;
-    b.style.background = TYPE_COLORS[t];
-    b.style.color = textColor(TYPE_COLORS[t]);
-    b.onclick = () => { pickerCb && pickerCb(t); closePicker(); };
-    grid.appendChild(b);
-  });
-  document.getElementById('picker-back').classList.add('show');
-}
-function closePicker() { document.getElementById('picker-back').classList.remove('show'); pickerCb = null; }
 
-/* ===================== TYPE CHART MODAL ===================== */
-function buildChart() {
-  let html = '<table class="tc"><thead><tr><th class="corner"></th>';
-  TYPES.forEach(d => {
-    html += `<th style="background:${TYPE_COLORS[d]};color:${textColor(TYPE_COLORS[d])}">${d.slice(0,3)}</th>`;
-  });
-  html += '</tr></thead><tbody>';
-  TYPES.forEach(a => {
-    html += `<tr><th style="background:${TYPE_COLORS[a]};color:${textColor(TYPE_COLORS[a])}">${a.slice(0,3)}</th>`;
-    TYPES.forEach(d => {
-      const v = getEffectiveness(a, d, null);
-      let cls = 'v1', txt = '';
-      if (v === 2) { cls = 'v2'; txt = '2'; }
-      else if (v === 0.5) { cls = 'v05'; txt = '½'; }
-      else if (v === 0) { cls = 'v0'; txt = '0'; }
-      html += `<td class="${cls}">${txt}</td>`;
+  /*
+   * Accepts a type string, a [type1, type2] array, or a {type1, type2} object.
+   * Returns a clean array of one or two distinct type names.
+   */
+  function normaliseTyping(target) {
+    var list;
+    if (typeof target === "string") list = [target];
+    else if (Array.isArray(target)) list = target.slice();
+    else if (target && typeof target === "object") list = [target.type1, target.type2];
+    else list = [];
+
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var t = list[i];
+      if (t && out.indexOf(t) === -1) out.push(t);
+    }
+    if (!out.length) throw new Error("A typing needs at least one type");
+    if (out.length > 2) throw new Error("A typing cannot exceed two types");
+    return out;
+  }
+
+  /* One attacking type against a full typing. Product of each defending type. */
+  function multiplier(attackType, target) {
+    var defenders = normaliseTyping(target);
+    var total = 1;
+    for (var i = 0; i < defenders.length; i++) total *= effectiveness(attackType, defenders[i]);
+    return total;
+  }
+
+  /* ===================================================================
+   * DEFENCE
+   * =================================================================== */
+
+  /*
+   * How hard `incomingType` hits `mon`.
+   * Returns {first, second, total} so a UI can show the working, not just the answer.
+   */
+  function calculateDefence(mon, incomingType) {
+    if (!mon || !mon.type1) return null;
+    var first = effectiveness(incomingType, mon.type1);
+    var second = mon.type2 ? effectiveness(incomingType, mon.type2) : 1;
+    return { first: first, second: second, total: first * second };
+  }
+
+  /*
+   * Coarse defensive standing, for views that ask "does this slot survive?" rather than
+   * "exactly how much does it take?". Three tiers, not six buckets.
+   *
+   * INVARIANT: this is a summary OF defenceKey's six buckets, never a replacement for it.
+   * A view that needs to separate ¼× from ½× must use defenceKey. Collapsing ¼ into ½
+   * is only acceptable where the question is binary survival.
+   */
+  function defenceTier(total) {
+    if (total <= .5) return "resist";
+    if (total === 1) return "neutral";
+    return "weak";
+  }
+
+  /* The six legal defensive results. Throws on anything else, by design. */
+  function defenceKey(value) {
+    if (value === 4) return "4";
+    if (value === 2) return "2";
+    if (value === 1) return "1";
+    if (value === .5) return "0.5";
+    if (value === .25) return "0.25";
+    if (value === 0) return "0";
+    throw new Error("Unexpected defensive multiplier: " + value);
+  }
+
+  /* ===================================================================
+   * OFFENCE
+   *
+   * INVARIANT: offence counts ENTERED MOVE TYPES ONLY.
+   * A Pokémon's own typing is never treated as coverage. A Psychic/Flying slot
+   * with no Psychic move does not hit anything with Psychic. The prior
+   * "Battle Advisor" build folded inherent typing into its coverage pool,
+   * which inflated every offensive reading it produced.
+   *
+   * Typing is used for one thing only: deciding whether a move gets STAB.
+   * =================================================================== */
+
+  /*
+   * INVARIANT: STAB is a 1.5x multiplier applied to a result.
+   * It is never a position on the effectiveness axis. A 3x result (2x with STAB)
+   * and a genuine 4x weakness are different facts and must not share a bucket.
+   */
+  function calculateMoveResult(mon, moveType, target) {
+    var base = multiplier(moveType, target);
+    var stab = Boolean(mon) && (moveType === mon.type1 || moveType === mon.type2);
+    var stabMultiplier = stab ? STAB_MULTIPLIER : 1;
+    return {
+      moveType: moveType,
+      base: base,
+      stab: stab,
+      stabMultiplier: stabMultiplier,
+      total: base * stabMultiplier
+    };
+  }
+
+  /*
+   * Best result this Pokémon's entered moves get against `target`.
+   * `target` may be a single type or a full [type1, type2] typing.
+   * Returns score:null when no move types are entered, which callers must handle
+   * as "unknown", never as zero.
+   */
+  function calculateBestOffence(mon, target) {
+    var moves = (mon && Array.isArray(mon.moves) ? mon.moves : []).filter(Boolean);
+    if (!moves.length) return { score: null, best: [], results: [] };
+    var results = moves.map(function (moveType) {
+      return calculateMoveResult(mon, moveType, target);
     });
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
-  document.getElementById('chart-scroll').innerHTML = html;
-}
-function openChart() { buildChart(); document.getElementById('chart-back').classList.add('show'); }
-function closeChart() { document.getElementById('chart-back').classList.remove('show'); }
+    var score = Math.max.apply(null, results.map(function (r) { return r.total; }));
+    return {
+      score: score,
+      best: results.filter(function (r) { return r.total === score; }),
+      results: results
+    };
+  }
 
-/* ===================== OPPONENT PICK ===================== */
-function pickOpp(n) {
-  openPicker('Opponent Type ' + n, n === 2, (t) => {
-    if (n === 1) {
-      if (t === null) return; // type1 required; ignore (no None offered anyway)
-      state.oppType1 = t;
-    } else {
-      state.oppType2 = t;
+  function classifyOffence(score) {
+    if (score === null || score === undefined) return "na";
+    if (score >= 2) return "strong";
+    if (score >= 1.5) return "good";
+    if (score >= 1) return "neutral";
+    if (score >= .75) return "weak";
+    return "bad";
+  }
+
+  /* ===================================================================
+   * TYPING ENUMERATION
+   * =================================================================== */
+
+  /*
+   * Every typing that can exist: 18 monotypes plus 153 dual combinations = 171.
+   *
+   * Attacks are always single-typed, so a defensive picture across the 18 types is
+   * complete. Targets are not. Offensive coverage measured against 18 types is
+   * measured against a world that does not exist, which is what this unlocks.
+   *
+   * Returns [type1, type2|null] pairs. Order within a pair is not significant.
+   */
+  function allTypings() {
+    var out = [];
+    for (var i = 0; i < TYPES.length; i++) out.push([TYPES[i], null]);
+    for (var a = 0; a < TYPES.length; a++) {
+      for (var b = a + 1; b < TYPES.length; b++) out.push([TYPES[a], TYPES[b]]);
     }
-    renderBattle();
-  });
-}
-
-/* ===================== COVERAGE ===================== */
-function toggleCoverage() {
-  state.coverageOn = document.getElementById('cov-switch').checked;
-  renderBattle();
-}
-function pickCoverage(idx) {
-  openPicker('Coverage ' + (idx + 1), true, (t) => {
-    state.coverage[idx] = t;
-    renderBattle();
-  });
-}
-// Swap the Opponent typing with the Coverage typing (double-battle target flip).
-// Clean two-for-two swap of ephemeral state; fully reversible.
-function swapOppCoverage() {
-  const o1 = state.oppType1, o2 = state.oppType2;
-  state.oppType1 = state.coverage[0];
-  state.oppType2 = state.coverage[1];
-  state.coverage[0] = o1;
-  state.coverage[1] = o2;
-  renderBattle();
-}
-function openCovInfo() { document.getElementById('cov-info-back').classList.add('show'); }
-function closeCovInfo() { document.getElementById('cov-info-back').classList.remove('show'); }
-
-/* ===================== TOGGLES / TABS / NAV ===================== */
-function toggle(which) {
-  state[which] = !state[which];
-  renderBattle();
-}
-function switchTab(tab) {
-  invalidateUndo();  // leaving the squad tab ends the undo window
-  document.getElementById('tab-battle').classList.toggle('active', tab === 'battle');
-  document.getElementById('tab-squad').classList.toggle('active', tab === 'squad');
-  document.getElementById('tab-coffee').classList.toggle('active', tab === 'coffee');
-  document.getElementById('tab-battle-btn').classList.toggle('active', tab === 'battle');
-  document.getElementById('tab-squad-btn').classList.toggle('active', tab === 'squad');
-  document.getElementById('tab-coffee-btn').classList.toggle('active', tab === 'coffee');
-  if (tab === 'battle') renderBattle();
-  if (tab === 'squad') renderSquad();
-}
-function selectPokemon(i) { state.selected = i; renderBattle(); }
-
-/* ===================== CHIP HELPERS ===================== */
-function makeChip(type, mult, hasStab, isDefense, badge) {
-  const c = document.createElement('div');
-  c.className = 'chip';
-  c.style.background = TYPE_COLORS[type];
-  c.style.color = textColor(TYPE_COLORS[type]);
-  if (isDefense) c.style.boxShadow = 'inset 0 0 0 2px rgba(210,60,60,.9)';
-  else c.style.boxShadow = 'inset 0 0 0 2px rgba(31,157,87,.9)';
-  let badgeHtml = '';
-  if (hasStab) badgeHtml = '<span class="stab">STAB</span>';
-  else if (badge) {
-    // 'Opps' = opponent's STAB (red), anything else (e.g. 'COV') = coverage (purple)
-    const cls = badge === 'Opps' ? 'badge-opp' : 'badge-cov';
-    badgeHtml = `<span class="${cls}">${badge}</span>`;
-  }
-  c.innerHTML = `${type}<span class="mult">${fmtMult(mult)}</span>${badgeHtml}`;
-  return c;
-}
-function emptyGrid(id) {
-  const g = document.getElementById(id);
-  g.innerHTML = '';
-  const cells = [];
-  for (let i = 0; i < 7; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'chip-cell';
-    g.appendChild(cell);
-    cells.push(cell);
-  }
-  return cells;
-}
-
-/* ===================== RENDER: BATTLE ===================== */
-function setDisplayChip(el, type) {
-  if (type) {
-    el.className = 'slot-btn typed';
-    el.style.cursor = 'default';
-    el.textContent = type;
-    el.style.background = TYPE_COLORS[type];
-    el.style.color = textColor(TYPE_COLORS[type]);
-  } else {
-    el.className = 'slot-btn empty';
-    el.style.cursor = 'default';
-    el.textContent = '—';
-    el.style.background = '';
-    el.style.color = '';
-  }
-}
-
-function renderBattle() {
-  document.getElementById('sel-num').textContent = state.selected + 1;
-
-  // current Pokémon's own types (read-only, reflects 1-6 selection)
-  const me = state.squad[state.selected];
-  document.getElementById('me-num').textContent = state.selected + 1;
-  setDisplayChip(document.getElementById('me-t1'), me.type1);
-  setDisplayChip(document.getElementById('me-t2'), me.type2);
-
-  // opponent buttons
-  const t1 = document.getElementById('opp-t1');
-  if (state.oppType1) {
-    t1.textContent = state.oppType1; t1.className = 'slot-btn typed';
-    t1.style.background = TYPE_COLORS[state.oppType1]; t1.style.color = textColor(TYPE_COLORS[state.oppType1]);
-  } else { t1.textContent = 'Type 1'; t1.className = 'slot-btn empty'; t1.style.background = ''; t1.style.color = ''; }
-  const t2 = document.getElementById('opp-t2');
-  if (state.oppType2) {
-    t2.textContent = state.oppType2; t2.className = 'slot-btn typed';
-    t2.style.background = TYPE_COLORS[state.oppType2]; t2.style.color = textColor(TYPE_COLORS[state.oppType2]);
-  } else { t2.textContent = 'Type 2'; t2.className = 'slot-btn empty'; t2.style.background = ''; t2.style.color = ''; }
-
-  // coverage slots (direct grid children — toggle individually)
-  const covSwitch = document.getElementById('cov-switch');
-  if (covSwitch) covSwitch.checked = state.coverageOn;
-  const cov1El = document.getElementById('cov-1');
-  const cov2El = document.getElementById('cov-2');
-  const swapEl = document.getElementById('swap-btn');
-  if (cov1El) cov1El.style.display = state.coverageOn ? '' : 'none';
-  if (cov2El) cov2El.style.display = state.coverageOn ? '' : 'none';
-  if (swapEl) swapEl.style.display = state.coverageOn ? '' : 'none';
-  if (state.coverageOn) {
-    styleSlotBtn(cov1El, state.coverage[0], 'Cov 1');
-    styleSlotBtn(cov2El, state.coverage[1], 'Cov 2');
+    return out;
   }
 
-  // toggle button states
-  document.getElementById('tg-off').classList.toggle('on', state.offense);
-  document.getElementById('tg-def').classList.toggle('on', state.defense);
-  document.getElementById('ov-offense').classList.toggle('show', state.offense);
-  document.getElementById('ov-defense').classList.toggle('show', state.defense);
+  /* ===================================================================
+   * TEAM AGGREGATES
+   *
+   * `mons` is an array of {index, mon} items so callers keep slot identity.
+   * =================================================================== */
 
-  if (state.offense) renderOffense();
-  if (state.defense) renderDefense();
-  renderMoveCards();
-  renderNav();
-  renderDots();
-}
+  /*
+   * For one target type: who answers it, who folds to it.
+   * This counts type answers and exposures. It is not a damage or battle score.
+   */
+  /*
+   * INVARIANT: `answers` and `exposures` are the single aggregation. Every other field
+   * here is derived from them, never counted a second time. Two views of the same team
+   * that count independently will eventually disagree, and the disagreement is silent.
+   *
+   * `net` is a RAW COUNT: answers minus exposures, unweighted. A slot that hits 2× but
+   * folds to 2× in return still counts as a full answer, and a 4× liability counts the
+   * same as a 2×. That is a deliberate simplification of an offensive question, not a
+   * damage model. Views that need severity read `defence` off the records.
+   */
+  function calculateTypeBalance(mons, targetType) {
+    var answers = [];
+    var exposures = [];
+    for (var i = 0; i < mons.length; i++) {
+      var item = mons[i];
+      var offence = calculateBestOffence(item.mon, targetType);
+      var defence = calculateDefence(item.mon, targetType);
+      if (offence.score !== null && offence.score >= 2) {
+        answers.push({
+          index: item.index,
+          score: offence.score,
+          moveType: offence.best.length ? offence.best[0].moveType : null,
+          tieCount: offence.best.length,
+          defence: defence ? defence.total : null,
+          tier: defence ? defenceTier(defence.total) : null
+        });
+      }
+      if (defence && defence.total >= 2) {
+        exposures.push({ index: item.index, defence: defence.total });
+      }
+    }
+    var attackers = answers.map(function (entry) { return entry.index; });
+    var weaknesses = exposures.map(function (entry) { return entry.index; });
+    return {
+      answers: answers,
+      exposures: exposures,
+      attackers: attackers,
+      weaknesses: weaknesses,
+      offensiveCount: answers.length,
+      weaknessCount: exposures.length,
+      net: answers.length - exposures.length
+    };
+  }
 
-function renderOffense() {
-  const cells = emptyGrid('off-grid');
-  const hint = document.getElementById('off-hint');
-  if (!state.oppType1) { hint.textContent = 'Pick an opponent type to see your coverage.'; return; }
-  hint.textContent = '';
+  function calculateTeamSummary(mons) {
+    var rows = TYPES.map(function (type) {
+      var balance = calculateTypeBalance(mons, type);
+      return {
+        type: type,
+        answers: balance.answers,
+        exposures: balance.exposures,
+        attackers: balance.attackers,
+        weaknesses: balance.weaknesses,
+        offensiveCount: balance.offensiveCount,
+        weaknessCount: balance.weaknessCount,
+        net: balance.net
+      };
+    });
+    var nets = rows.map(function (row) { return row.net; });
+    var max = Math.max.apply(null, nets);
+    var min = Math.min.apply(null, nets);
+    return {
+      rows: rows,
+      positive: rows.filter(function (r) { return r.net > 0; }).length,
+      even: rows.filter(function (r) { return r.net === 0; }).length,
+      negative: rows.filter(function (r) { return r.net < 0; }).length,
+      best: rows.filter(function (r) { return r.net === max; }),
+      worst: rows.filter(function (r) { return r.net === min; }),
+      noAnswer: rows.filter(function (r) { return r.offensiveCount === 0; })
+    };
+  }
 
-  // Aggregate unique offensive types: all move slots + each Pokémon's inherent types
-  const set = new Set();
-  state.squad.forEach(p => {
-    if (p.type1) set.add(p.type1);
-    if (p.type2) set.add(p.type2);
-    p.moves.forEach(m => { if (m) set.add(m); });
-  });
-  if (set.size === 0) { hint.textContent = 'Configure your squad in the Squad tab first.'; return; }
+  /* ===================================================================
+   * FORMATTING
+   * =================================================================== */
 
-  // STAB applies only to the SELECTED Pokémon's 4 move types that match its own Type 1/2.
-  const sel = state.squad[state.selected];
-  const stabTypes = new Set();
-  if (sel) sel.moves.forEach(m => { if (m && (m === sel.type1 || m === sel.type2)) stabTypes.add(m); });
+  function formatMultiplier(value) {
+    if (value === null || value === undefined) return "N/A";
+    if (value === .25) return "¼×";
+    if (value === .5) return "½×";
+    if (value === .75) return "¾×";
+    if (Number.isInteger(value)) return value + "×";
+    return String(Math.round(value * 1000) / 1000) + "×";
+  }
 
-  // sort so strongest appear first within a column
-  const entries = [...set].map(type => {
-    const base = getEffectiveness(type, state.oppType1, state.oppType2);
-    const hasStab = stabTypes.has(type);
-    const eff = base * (hasStab ? 1.5 : 1);
-    return { type, eff, hasStab };
-  }).sort((a, b) => b.eff - a.eff);
+  /* ===================================================================
+   * STATE
+   *
+   * INVARIANT: state defaults to EMPTY. No personal squad ever ships as a default.
+   * Load a demo behind an explicit button instead.
+   * =================================================================== */
 
-  entries.forEach(e => {
-    cells[columnFor(e.eff)].appendChild(makeChip(e.type, e.eff, e.hasStab, false));
-  });
-}
+  var STATE_VERSION = 1;
 
-function renderDefense() {
-  const cells = emptyGrid('def-grid');
-  const hint = document.getElementById('def-hint');
-  const p = state.squad[state.selected];
-  if (!state.oppType1) { hint.textContent = 'Pick an opponent type to see incoming damage.'; return; }
-  if (!p.type1) { hint.textContent = `Pokémon ${state.selected + 1} has no type set (Squad tab).`; return; }
-  hint.textContent = '';
+  function emptyMon() {
+    return { type1: null, type2: null, moves: [null, null, null, null], bring: false };
+  }
 
-  // one chip per opponent attacking type, vs current Pokémon's full type combo.
-  // The opponent attacks with its own types, so these are STAB (×1.5) — marked "Opps".
-  const oppTypes = [state.oppType1, state.oppType2].filter(Boolean);
-  oppTypes.forEach(att => {
-    const v = getEffectiveness(att, p.type1, p.type2) * 1.5;
-    cells[columnFor(v)].appendChild(makeChip(att, v, false, true, 'Opps'));
-  });
+  function defaultState() {
+    return {
+      version: STATE_VERSION,
+      analysisMode: "six",
+      mons: [emptyMon(), emptyMon(), emptyMon(), emptyMon(), emptyMon(), emptyMon()]
+    };
+  }
 
-  // coverage moves (toggle on): same chip style + "COV" badge, de-duped vs opponent types
-  if (state.coverageOn) {
-    const seen = new Set(oppTypes);
-    state.coverage.forEach(cov => {
-      if (!cov || seen.has(cov)) return;
-      seen.add(cov);
-      const v = getEffectiveness(cov, p.type1, p.type2);
-      cells[columnFor(v)].appendChild(makeChip(cov, v, false, true, 'COV'));
+  /*
+   * INVARIANT: move types deduplicate within a Pokémon.
+   * Analysis is type-only, so two moves of the same type carry no extra information
+   * and quietly overstate how many distinct answers a slot has.
+   */
+  function sanitiseMon(input) {
+    var mon = emptyMon();
+    if (!input || typeof input !== "object") return mon;
+
+    mon.type1 = TYPES.indexOf(input.type1) !== -1 ? input.type1 : null;
+    if (!mon.type1) return mon;                       // nothing survives without type 1
+    mon.type2 = (TYPES.indexOf(input.type2) !== -1 && input.type2 !== mon.type1) ? input.type2 : null;
+
+    var seen = [];
+    if (Array.isArray(input.moves)) {
+      mon.moves = [0, 1, 2, 3].map(function (i) {
+        var move = input.moves[i];
+        if (TYPES.indexOf(move) === -1 || seen.indexOf(move) !== -1) return null;
+        seen.push(move);
+        return move;
+      });
+    }
+    mon.bring = Boolean(input.bring);
+    return mon;
+  }
+
+  function sanitiseState(input) {
+    var clean = defaultState();
+    if (!input || typeof input !== "object") return clean;
+    clean.analysisMode = input.analysisMode === "selection" ? "selection" : "six";
+    if (Array.isArray(input.mons)) {
+      clean.mons = [0, 1, 2, 3, 4, 5].map(function (i) { return sanitiseMon(input.mons[i]); });
+    }
+    return clean;
+  }
+
+  /* ===================================================================
+   * TEAM CODE
+   * Base64url, no server, no network. Moves a squad between devices.
+   * =================================================================== */
+
+  function toBase64(text) {
+    if (typeof btoa === "function") return btoa(text);
+    return Buffer.from(text, "binary").toString("base64");
+  }
+
+  function fromBase64(text) {
+    if (typeof atob === "function") return atob(text);
+    return Buffer.from(text, "base64").toString("binary");
+  }
+
+  function encodeTeamCode(sourceState) {
+    var payload = {
+      v: STATE_VERSION,
+      mons: sourceState.mons.map(function (mon) {
+        return { t1: mon.type1, t2: mon.type2, m: mon.moves, b: mon.bring };
+      })
+    };
+    return toBase64(JSON.stringify(payload))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+  }
+
+  function decodeTeamCode(code) {
+    var normalised = String(code).trim().replace(/-/g, "+").replace(/_/g, "/");
+    var padded = normalised + "=".repeat((4 - normalised.length % 4) % 4);
+    var payload = JSON.parse(fromBase64(padded));
+    if (!payload || payload.v !== STATE_VERSION || !Array.isArray(payload.mons)) {
+      throw new Error("Unsupported team code");
+    }
+    return sanitiseState({
+      mons: payload.mons.map(function (mon) {
+        return { type1: mon.t1, type2: mon.t2, moves: mon.m, bring: mon.b };
+      })
     });
   }
-}
 
-function renderMoveCards() {
-  const wrap = document.getElementById('move-cards');
-  wrap.innerHTML = '';
-  const p = state.squad[state.selected];
-  for (let i = 0; i < 4; i++) {
-    const mv = p.moves[i];
-    const card = document.createElement('div');
-    if (!mv) {
-      card.className = 'move-card empty';
-      card.textContent = 'Empty';
-      wrap.appendChild(card);
-      continue;
-    }
-    card.className = 'move-card';
-    card.style.background = TYPE_COLORS[mv];
-    card.style.color = textColor(TYPE_COLORS[mv]);
-    const hasStab = (mv === p.type1 || mv === p.type2);
-    let mult = '—';
-    if (state.oppType1) {
-      const base = getEffectiveness(mv, state.oppType1, state.oppType2);
-      mult = fmtMult(base * (hasStab ? 1.5 : 1));
-    }
-    card.innerHTML = `<div class="mname">${mv}</div><div class="mmult">${mult}</div>` +
-      (hasStab ? '<div class="stab-badge">STAB</div>' : '');
-    wrap.appendChild(card);
-  }
-}
+  /* =================================================================== */
 
-function renderNav() {
-  const nav = document.getElementById('nav16');
-  nav.innerHTML = '';
-  for (let i = 0; i < 6; i++) {
-    const p = state.squad[i];
-    const b = document.createElement('button');
-    if (i === state.selected) b.classList.add('active');
-    b.innerHTML = `<span class="nav-num">${i + 1}</span>` + typeBarsHTML(p.type1, p.type2);
-    b.onclick = () => selectPokemon(i);
-    nav.appendChild(b);
-  }
-}
-// Type-colour bars under each nav number: two when both types set,
-// one centred when only one is set, a single grey bar when none.
-function typeBarsHTML(t1, t2) {
-  const types = [t1, t2].filter(Boolean);
-  if (types.length === 0) return '<span class="tbars"><span class="tbar empty"></span></span>';
-  const bars = types.map(t => `<span class="tbar" style="background:${TYPE_COLORS[t]}"></span>`).join('');
-  return `<span class="tbars">${bars}</span>`;
-}
+  return {
+    TYPES: TYPES,
+    TYPE_RELATIONS: TYPE_RELATIONS,
+    EXPECTED_MATRIX: EXPECTED_MATRIX,
+    TYPE_CHART: TYPE_CHART,
+    STAB_MULTIPLIER: STAB_MULTIPLIER,
+    STATE_VERSION: STATE_VERSION,
 
-// ---- Attack / Defence dot rows -------------------------------------------
-// 5-step colour scale shared by both rows.
-const SCALE = {
-  deepGreen:  '#157a41',
-  lightGreen: '#7cc99e',
-  grey:       '#c4cad3',
-  lightRed:   '#e79c90',
-  deepRed:    '#c0392b'
-};
-const EMPTY_DOT = 'empty';
+    buildTypeChart: buildTypeChart,
+    effectiveness: effectiveness,
+    normaliseTyping: normaliseTyping,
+    multiplier: multiplier,
 
-// Defence: the scariest single hit this Pokémon can take. Worst-case, not average —
-// the opponent picks their best move against a switch-in.
-function defenceInfo(p) {
-  if (!state.oppType1 || !p.type1) return { color: EMPTY_DOT, title: 'Defence — set opponent & squad' };
+    calculateDefence: calculateDefence,
+    defenceKey: defenceKey,
+    defenceTier: defenceTier,
 
-  // Opponent attacks with its own types → STAB (×1.5). A super-effective STAB lands at 3×.
-  const incoming = [state.oppType1, state.oppType2].filter(Boolean)
-    .map(att => getEffectiveness(att, p.type1, p.type2) * 1.5);
-  // Coverage = off-type moves → no STAB. Only ever reddens the dot; never the green side.
-  const covHits = state.coverageOn
-    ? state.coverage.filter(Boolean).map(c => getEffectiveness(c, p.type1, p.type2))
-    : [];
+    calculateMoveResult: calculateMoveResult,
+    calculateBestOffence: calculateBestOffence,
+    classifyOffence: classifyOffence,
 
-  const worst = Math.max(...incoming, ...covHits);
+    allTypings: allTypings,
+    calculateTypeBalance: calculateTypeBalance,
+    calculateTeamSummary: calculateTeamSummary,
 
-  let color;
-  if (worst >= 3)         color = SCALE.deepRed;     // SE STAB (3×), double-weakness, or 4× coverage — avoid
-  else if (worst >= 2)    color = SCALE.lightRed;    // SE coverage (2×) — real threat, survivable
-  else if (worst >= 1.25) color = SCALE.grey;        // neutral STAB (1.5×) — no type advantage
-  else if (worst <= 0.75) color = SCALE.deepGreen;   // you resist their STAB
-  else                    color = SCALE.lightGreen;  // you wall their STAB; only an off-type neutral lands
+    formatMultiplier: formatMultiplier,
 
-  // Name the source of the worst hit so the tooltip is honest about STAB vs coverage.
-  const covWorst = covHits.length ? Math.max(...covHits) : 0;
-  const src = covWorst === worst && covWorst >= 2 ? ' (coverage)'
-            : worst >= 2 ? ' (opponent STAB)' : '';
-  return { color, title: `Defence — worst ${fmtMult(worst)}${src}` };
-}
+    emptyMon: emptyMon,
+    defaultState: defaultState,
+    sanitiseMon: sanitiseMon,
+    sanitiseState: sanitiseState,
+    encodeTeamCode: encodeTeamCode,
+    decodeTeamCode: decodeTeamCode
+  };
+});
 
-// Attack: how this Pokémon's FILLED moves hit the opponent. Higher = greener. No STAB.
-function attackInfo(p) {
-  const moves = p.moves.filter(Boolean);
-  if (!state.oppType1 || moves.length === 0) return { color: EMPTY_DOT, title: 'Attack — set opponent & moves' };
-  const out = moves.map(mv => getEffectiveness(mv, state.oppType1, state.oppType2));
-  const avg = out.reduce((a, b) => a + b, 0) / out.length;
-  const best = Math.max(...out);
-  let color;
-  if (out.some(v => v >= 2)) color = (avg >= 2) ? SCALE.deepGreen : SCALE.lightGreen;     // any 2x -> at least light green
-  else if (out.every(v => v === 1)) color = SCALE.grey;
-  else if (avg <= 0.5) color = SCALE.deepRed;
-  else color = SCALE.lightRed;                                                             // 0.5 < avg < 1
-  return { color, title: `Attack — best ${fmtMult(best)}, avg ${fmtMult(avg)}` };
-}
+</script>
+<script>
+/* inlined from ../Pokemon_Type_Engine/src/design-tokens.js */
+/*
+ * Pokémon Type Engine — Design Tokens
+ * The shared visual vocabulary. Colours, labels, buckets, classes and theme values.
+ *
+ * Pairs with src/type-engine.js. Same loading rules: not an ES module, so the file
+ * works under Node, as a local <script src>, and pasted inline into an artifact.
+ *
+ * ACCESSIBILITY RULE
+ *   Colour is never the sole encoding. The whole effectiveness scale runs red to green,
+ *   which is exactly the axis red/green colour blindness collapses. Every coloured
+ *   element must also carry text, a glyph, or a position that says the same thing.
+ */
+(function (root, factory) {
+  "use strict";
+  var api = factory();
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  if (root) root.PokemonDesignTokens = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
 
-function renderDots() {
-  const fill = (id, infoFn) => {
-    const c = document.getElementById(id);
-    c.innerHTML = '';
-    for (let i = 0; i < 6; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'dot-cell';
-      const dot = document.createElement('div');
-      const info = infoFn(state.squad[i]);
-      if (info.color === EMPTY_DOT) { dot.className = 'dot empty'; }
-      else { dot.className = 'dot'; dot.style.background = info.color; }
-      dot.title = info.title;
-      cell.appendChild(dot);
-      c.appendChild(cell);
+  /*
+   * CANONICAL PALETTE. The current standard values.
+   * The earlier "Battle Advisor" build used the Gen-3 era palette (Fire #F08030).
+   * Those are retired. Two builds of the same tool disagreeing on Fire is exactly
+   * the drift this file exists to stop.
+   */
+  var TYPE_COLORS = {
+    Normal: "#A8A77A", Fire: "#EE8130", Water: "#6390F0", Electric: "#F7D02C",
+    Grass: "#7AC74C", Ice: "#96D9D6", Fighting: "#C22E28", Poison: "#A33EA1",
+    Ground: "#E2BF65", Flying: "#A98FF3", Psychic: "#F95587", Bug: "#A6B91A",
+    Rock: "#B6A136", Ghost: "#735797", Dragon: "#6F35FC", Dark: "#705746",
+    Steel: "#B7B7CE", Fairy: "#D685AD"
+  };
+
+  /* Three-letter labels for dense grids where the full name will not fit. */
+  var TYPE_ABBR = {
+    Normal: "NOR", Fire: "FIR", Water: "WAT", Electric: "ELE", Grass: "GRA", Ice: "ICE",
+    Fighting: "FIG", Poison: "POI", Ground: "GRO", Flying: "FLY", Psychic: "PSY", Bug: "BUG",
+    Rock: "ROC", Ghost: "GHO", Dragon: "DRA", Dark: "DAR", Steel: "STE", Fairy: "FAI"
+  };
+
+  /*
+   * The six legal defensive results, worst to best.
+   * INVARIANT: these stay six discrete buckets. Never merge ¼ into ½.
+   * On defence that distinction is the difference between a safe pivot and a risky one,
+   * and the earlier "Battle Advisor" build lost it by collapsing both into one column.
+   */
+  var DEFENCE_BUCKETS = [
+    { key: "4",    value: 4,   label: "4× weak",     sub: "Severe weakness", zone: "danger" },
+    { key: "2",    value: 2,   label: "2× weak",     sub: "Weakness",        zone: "danger" },
+    { key: "1",    value: 1,   label: "1× normal",   sub: "Neutral",         zone: "even"   },
+    { key: "0.5",  value: .5,  label: "½× resist",   sub: "Resistance",      zone: "safe"   },
+    { key: "0.25", value: .25, label: "¼× resist",   sub: "Double resist",   zone: "safe"   },
+    { key: "0",    value: 0,   label: "Immune",      sub: "No damage",       zone: "safe"   }
+  ];
+
+  /*
+   * Offensive classes. Thresholds mirror classifyOffence() in type-engine.js.
+   * Change one and you must change the other, and the suite will tell you if you do not.
+   */
+  var OFFENCE_CLASSES = [
+    { key: "strong",  min: 2,    label: "≥2×",   sub: "Super effective",  glyph: "▲" },
+    { key: "good",    min: 1.5,  label: "1.5×",  sub: "Neutral STAB",     glyph: "△" },
+    { key: "neutral", min: 1,    label: "1×",    sub: "Neutral coverage", glyph: "•" },
+    { key: "weak",    min: .75,  label: "0.75×", sub: "Resisted STAB",    glyph: "▽" },
+    { key: "bad",     min: 0,    label: "≤0.5×", sub: "Poor or blocked",  glyph: "▼" },
+    { key: "na",      min: null, label: "N/A",   sub: "No moves entered", glyph: "–" }
+  ];
+
+  /*
+   * Theme tokens. Both earlier builds hardcoded light, which reads as broken inside
+   * an artifact viewer set to dark. Define light on :root, then redefine the same
+   * names under dark. Never give a colour its only definition inside a media query.
+   */
+  var THEME = {
+    light: {
+      "--bg": "#f4f5f8",
+      "--surface": "#ffffff",
+      "--surface-soft": "#f8f9fb",
+      "--ink": "#162033",
+      "--muted": "#687286",
+      "--line": "#dfe3ea",
+      "--line-strong": "#c7cdd8",
+      "--danger": "#c0392b",
+      "--danger-soft": "#f7dcd8",
+      "--safe": "#218a52",
+      "--safe-soft": "#d3efdf",
+      "--even": "#8a93a2",
+      "--even-soft": "#eceef2",
+      "--accent": "#4a5cc5"
+    },
+    dark: {
+      "--bg": "#11151c",
+      "--surface": "#1a202a",
+      "--surface-soft": "#212936",
+      "--ink": "#e8ecf3",
+      "--muted": "#98a3b5",
+      "--line": "#2c3542",
+      "--line-strong": "#3d4859",
+      "--danger": "#e8705f",
+      "--danger-soft": "#3a2320",
+      "--safe": "#4fbd84",
+      "--safe-soft": "#17301f",
+      "--even": "#7b8698",
+      "--even-soft": "#262d38",
+      "--accent": "#8b9af0"
     }
   };
-  fill('attack-dots', attackInfo);
-  fill('defence-dots', defenceInfo);
-}
 
-/* ===================== RENDER: SQUAD ===================== */
-function renderSquad() {
-  updateClearBtn();
-  const grid = document.getElementById('squad-grid');
-  grid.innerHTML = '';
-  state.squad.forEach((p, idx) => {
-    const slot = document.createElement('div');
-    slot.className = 'squad-slot';
+  /* ===================================================================
+   * COLOUR HELPERS
+   * =================================================================== */
 
-    const head = document.createElement('div');
-    head.className = 'slot-head';
-    head.textContent = 'POKÉMON ' + (idx + 1);
-    slot.appendChild(head);
-
-    // types row
-    const row = document.createElement('div');
-    row.className = 'squad-row';
-    row.appendChild(typeField('Type 1', p.type1, false, (t) => { p.type1 = t; invalidateUndo(); saveSquad(); renderSquad(); }));
-    row.appendChild(typeField('Type 2', p.type2, true, (t) => { p.type2 = t; invalidateUndo(); saveSquad(); renderSquad(); }));
-    slot.appendChild(row);
-
-    // moves
-    const ml = document.createElement('div');
-    ml.className = 'moves-label';
-    ml.textContent = 'Moves';
-    slot.appendChild(ml);
-
-    const mg = document.createElement('div');
-    mg.className = 'moves-grid';
-    for (let i = 0; i < 4; i++) {
-      mg.appendChild(moveBtn(p.moves[i], (t) => { p.moves[i] = t; invalidateUndo(); saveSquad(); renderSquad(); }));
-    }
-    slot.appendChild(mg);
-
-    grid.appendChild(slot);
-  });
-}
-
-function typeField(label, value, allowNone, onPick) {
-  const f = document.createElement('div');
-  f.className = 'field';
-  const l = document.createElement('label');
-  l.textContent = label;
-  f.appendChild(l);
-  const b = document.createElement('button');
-  styleSlotBtn(b, value, label);
-  b.onclick = () => openPicker(label, allowNone, onPick);
-  f.appendChild(b);
-  return f;
-}
-function moveBtn(value, onPick) {
-  const b = document.createElement('button');
-  styleSlotBtn(b, value, '—');
-  b.onclick = () => openPicker('Move type', true, onPick);
-  return b;
-}
-function styleSlotBtn(b, value, emptyLabel) {
-  if (value) {
-    b.className = 'slot-btn typed';
-    b.textContent = value;
-    b.style.background = TYPE_COLORS[value];
-    b.style.color = textColor(TYPE_COLORS[value]);
-  } else {
-    b.className = 'slot-btn empty';
-    b.textContent = emptyLabel;
-    b.style.background = '';
-    b.style.color = '';
+  function hexToRgb(hex) {
+    var value = String(hex).replace("#", "");
+    return {
+      r: parseInt(value.slice(0, 2), 16),
+      g: parseInt(value.slice(2, 4), 16),
+      b: parseInt(value.slice(4, 6), 16)
+    };
   }
-}
 
-/* ===================== INIT ===================== */
-state.squad = loadSquad();
-renderBattle();
-renderSquad();
+  /* Blend two hex colours. amountB of 0 returns hexA, 1 returns hexB. */
+  function mixHex(hexA, hexB, amountB) {
+    var a = hexToRgb(hexA);
+    var b = hexToRgb(hexB);
+    function mix(channel) {
+      return Math.round(a[channel] * (1 - amountB) + b[channel] * amountB);
+    }
+    return "#" + [mix("r"), mix("g"), mix("b")].map(function (v) {
+      return v.toString(16).padStart(2, "0");
+    }).join("");
+  }
+
+  /* Readable text colour for a given background. */
+  function contrastText(hex) {
+    var c = hexToRgb(hex);
+    var luminance = (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255;
+    return luminance > .58 ? "#172033" : "#ffffff";
+  }
+
+  /* Emit a theme block as CSS custom property declarations. */
+  function themeCSS(name) {
+    var tokens = THEME[name];
+    return Object.keys(tokens).map(function (key) {
+      return key + ": " + tokens[key] + ";";
+    }).join("\n  ");
+  }
+
+  return {
+    TYPE_COLORS: TYPE_COLORS,
+    TYPE_ABBR: TYPE_ABBR,
+    DEFENCE_BUCKETS: DEFENCE_BUCKETS,
+    OFFENCE_CLASSES: OFFENCE_CLASSES,
+    THEME: THEME,
+    hexToRgb: hexToRgb,
+    mixHex: mixHex,
+    contrastText: contrastText,
+    themeCSS: themeCSS
+  };
+});
+
+</script>
+<script>
+/* inlined from ../Pokemon_Type_Engine/test/engine.test.js */
+/*
+ * Pokémon Type Engine — verification suite
+ *
+ * One suite, two runners:
+ *   Node     node test/engine.test.js        exits 0 on pass, 1 on failure
+ *   Browser  <script src="../test/engine.test.js"><\/script> then call runDiagnostics()
+ *
+ * The browser path is not a nicety. A shipped analysis tool should refuse to render
+ * rather than display numbers it cannot prove. Wire the result to a visible badge and
+ * gate the analytics view on `ok`.
+ */
+(function (root, factory) {
+  "use strict";
+  var isNode = typeof module !== "undefined" && module.exports;
+  var Engine = isNode ? require("../src/type-engine.js") : root.PokemonTypeEngine;
+  var Tokens = isNode ? require("../src/design-tokens.js") : root.PokemonDesignTokens;
+
+  if (!Engine || !Tokens) {
+    throw new Error("Load src/type-engine.js and src/design-tokens.js before the suite");
+  }
+
+  var runDiagnostics = factory(Engine, Tokens);
+
+  if (isNode) {
+    var result = runDiagnostics();
+    result.tests.forEach(function (t) {
+      console.log((t.ok ? "  PASS  " : "  FAIL  ") + t.name + "\n          " + t.detail);
+    });
+    console.log("");
+    console.log(result.ok ? "PASS" : "FAIL");
+    console.log(result.tests.filter(function (t) { return t.ok; }).length + "/" + result.tests.length +
+      " checks, " + result.assertions.toLocaleString() + " assertions");
+    process.exit(result.ok ? 0 : 1);
+  } else {
+    root.runDiagnostics = runDiagnostics;
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this, function (Engine, Tokens) {
+  "use strict";
+
+  var TYPES = Engine.TYPES;
+
+  return function runDiagnostics() {
+    var tests = [];
+    var assertions = 0;
+
+    function test(name, detail, fn) {
+      try {
+        fn();
+        tests.push({ name: name, detail: detail, ok: true });
+      } catch (error) {
+        tests.push({ name: name, detail: detail + " — " + error.message, ok: false });
+      }
+    }
+    function assert(condition, message) {
+      assertions++;
+      if (!condition) throw new Error(message);
+    }
+
+    /* ---------- Canonical data ---------- */
+
+    test("18 canonical types", "Unique type identifiers and relationship definitions", function () {
+      assert(TYPES.length === 18, "Expected 18 types, found " + TYPES.length);
+      assert(new Set(TYPES).size === 18, "Duplicate type identifier");
+      assert(Object.keys(Engine.TYPE_RELATIONS).length === 18, "Relationship definition count mismatch");
+      TYPES.forEach(function (type) {
+        assert(Engine.TYPE_RELATIONS[type], "Missing relationships for " + type);
+      });
+    });
+
+    test("324 matrix cells", "Every attack–defence cell exists and uses only 0, 0.5, 1 or 2", function () {
+      var allowed = new Set([0, .5, 1, 2]);
+      var cells = 0;
+      TYPES.forEach(function (attackType) {
+        TYPES.forEach(function (defendType) {
+          var value = Engine.TYPE_CHART[attackType][defendType];
+          assert(allowed.has(value), "Invalid " + attackType + " → " + defendType + ": " + value);
+          cells++;
+        });
+      });
+      assert(cells === 324, "Expected 324 cells, found " + cells);
+    });
+
+    test("Matrix fixture shape", "EXPECTED_MATRIX is 18 × 18 and aligned to TYPES order", function () {
+      assert(Engine.EXPECTED_MATRIX.length === 18,
+        "Expected 18 rows, found " + Engine.EXPECTED_MATRIX.length);
+      Engine.EXPECTED_MATRIX.forEach(function (row, i) {
+        assert(row.length === 18, "Row " + i + " (" + TYPES[i] + ") has " + row.length + " columns");
+      });
+    });
+
+    test("Independent matrix fixture", "Generated relationships match the full 18 × 18 expected matrix", function () {
+      for (var a = 0; a < TYPES.length; a++) {
+        for (var d = 0; d < TYPES.length; d++) {
+          assert(Engine.TYPE_CHART[TYPES[a]][TYPES[d]] === Engine.EXPECTED_MATRIX[a][d],
+            "Mismatch " + TYPES[a] + " → " + TYPES[d]);
+        }
+      }
+    });
+
+    /* ---------- Typing enumeration ---------- */
+
+    test("171 possible typings", "18 monotypes plus 153 dual combinations, no duplicates", function () {
+      var typings = Engine.allTypings();
+      assert(typings.length === 171, "Expected 171 typings, found " + typings.length);
+      var mono = typings.filter(function (t) { return !t[1]; });
+      assert(mono.length === 18, "Expected 18 monotypes, found " + mono.length);
+      var seen = new Set();
+      typings.forEach(function (t) {
+        var key = t[1] ? [t[0], t[1]].sort().join("/") : t[0];
+        assert(!seen.has(key), "Duplicate typing " + key);
+        seen.add(key);
+        assert(t[0] !== t[1], "Typing repeats a type: " + key);
+      });
+    });
+
+    /* ---------- Defence ---------- */
+
+    var defensiveCases = 0;
+    test("3,078 defensive scenarios", "All 171 typings against all 18 incoming types", function () {
+      var valid = new Set([0, .25, .5, 1, 2, 4]);
+      var typings = Engine.allTypings();
+      typings.forEach(function (typing) {
+        TYPES.forEach(function (incoming) {
+          var mon = { type1: typing[0], type2: typing[1], moves: [] };
+          var result = Engine.calculateDefence(mon, incoming).total;
+          assert(valid.has(result),
+            "Invalid defence " + incoming + " vs " + typing[0] + "/" + typing[1] + ": " + result);
+          assert(Engine.defenceKey(result) !== undefined, "No bucket for " + result);
+          if (typing[1]) {
+            var swapped = Engine.calculateDefence(
+              { type1: typing[1], type2: typing[0], moves: [] }, incoming).total;
+            assert(result === swapped, "Order changed " + typing[0] + "/" + typing[1] + " vs " + incoming);
+          }
+          defensiveCases++;
+        });
+      });
+      assert(defensiveCases === 3078, "Expected 3,078 scenarios, found " + defensiveCases);
+    });
+
+    test("Six defensive buckets", "defenceKey accepts exactly the six legal results and rejects others", function () {
+      var legal = [[4, "4"], [2, "2"], [1, "1"], [.5, "0.5"], [.25, "0.25"], [0, "0"]];
+      legal.forEach(function (pair) {
+        assert(Engine.defenceKey(pair[0]) === pair[1], "Wrong bucket for " + pair[0]);
+      });
+      assert(Tokens.DEFENCE_BUCKETS.length === 6,
+        "Expected 6 defence buckets, found " + Tokens.DEFENCE_BUCKETS.length);
+      Tokens.DEFENCE_BUCKETS.forEach(function (bucket) {
+        assert(Engine.defenceKey(bucket.value) === bucket.key,
+          "Bucket " + bucket.key + " does not match engine key");
+      });
+      [3, .75, 8, -1].forEach(function (bad) {
+        var threw = false;
+        try { Engine.defenceKey(bad); } catch (e) { threw = true; }
+        assert(threw, "defenceKey silently accepted " + bad);
+      });
+    });
+
+    /* ---------- Offence ---------- */
+
+    var offensiveCases = 0;
+    test("648 single-target offensive scenarios", "Every move type against every type, non-STAB and STAB", function () {
+      var possible = new Set([0, .5, .75, 1, 1.5, 2, 3]);
+      TYPES.forEach(function (moveType) {
+        TYPES.forEach(function (targetType) {
+          var nonStab = Engine.calculateMoveResult({ type1: null, type2: null }, moveType, targetType);
+          assert(nonStab.total === nonStab.base, "Non-STAB mismatch " + moveType + " → " + targetType);
+          assert(possible.has(nonStab.total), "Unexpected non-STAB score " + nonStab.total);
+          offensiveCases++;
+
+          var stab = Engine.calculateMoveResult({ type1: moveType, type2: null }, moveType, targetType);
+          assert(stab.total === stab.base * 1.5, "STAB mismatch " + moveType + " → " + targetType);
+          assert(possible.has(stab.total), "Unexpected STAB score " + stab.total);
+          if (stab.base === 0) assert(stab.total === 0, "Immunity did not remain zero: " + moveType);
+          offensiveCases++;
+        });
+      });
+      assert(offensiveCases === 648, "Expected 648 scenarios, found " + offensiveCases);
+    });
+
+    var dualCases = 0;
+    test("3,078 dual-target offensive scenarios", "Every move type against every one of the 171 typings", function () {
+      var possible = new Set([0, .25, .375, .5, .75, 1, 1.5, 2, 3, 4, 6]);
+      var typings = Engine.allTypings();
+      TYPES.forEach(function (moveType) {
+        typings.forEach(function (typing) {
+          var target = typing[1] ? [typing[0], typing[1]] : typing[0];
+          var plain = Engine.calculateMoveResult({ type1: null, type2: null }, moveType, target);
+          assert(possible.has(plain.total), "Unexpected score " + plain.total + " for " + moveType);
+
+          var expected = Engine.effectiveness(moveType, typing[0]) *
+            (typing[1] ? Engine.effectiveness(moveType, typing[1]) : 1);
+          assert(plain.base === expected, "multiplier disagrees with product for " + moveType);
+
+          var stab = Engine.calculateMoveResult({ type1: moveType, type2: null }, moveType, target);
+          assert(stab.total === plain.base * 1.5, "STAB not applied on dual target for " + moveType);
+          if (plain.base === 0) assert(stab.total === 0, "Immunity survived STAB for " + moveType);
+          dualCases++;
+        });
+      });
+      assert(dualCases === 3078, "Expected 3,078 scenarios, found " + dualCases);
+    });
+
+    test("Offence uses entered moves only", "A Pokémon's own typing is never counted as coverage", function () {
+      var mon = { type1: "Psychic", type2: "Flying", moves: ["Normal", null, null, null] };
+      var offence = Engine.calculateBestOffence(mon, "Fighting");
+      assert(offence.results.length === 1, "Expected exactly one result, found " + offence.results.length);
+      assert(offence.results[0].moveType === "Normal", "Inherent typing leaked into the move pool");
+      assert(offence.score === 1, "Expected 1×, found " + offence.score);
+
+      var noMoves = Engine.calculateBestOffence({ type1: "Fire", type2: null, moves: [] }, "Grass");
+      assert(noMoves.score === null, "Empty move list must score null, not zero");
+      assert(Engine.classifyOffence(noMoves.score) === "na", "Empty move list must classify as na");
+    });
+
+    test("Offensive class boundaries", "Exact mapping for 3, 2, 1.5, 1, 0.75, 0.5, 0 and N/A", function () {
+      var fixtures = [[3, "strong"], [2, "strong"], [1.5, "good"], [1, "neutral"],
+                      [.75, "weak"], [.5, "bad"], [0, "bad"], [null, "na"]];
+      fixtures.forEach(function (pair) {
+        assert(Engine.classifyOffence(pair[0]) === pair[1],
+          "Classified " + pair[0] + " as " + Engine.classifyOffence(pair[0]));
+      });
+      assert(Tokens.OFFENCE_CLASSES.length === 6,
+        "Expected 6 offence classes, found " + Tokens.OFFENCE_CLASSES.length);
+      Tokens.OFFENCE_CLASSES.forEach(function (cls) {
+        if (cls.min === null) return;
+        assert(Engine.classifyOffence(cls.min) === cls.key,
+          "Token class " + cls.key + " disagrees with classifyOffence at " + cls.min);
+      });
+    });
+
+    /* ---------- Regression ---------- */
+
+    test("Regression fixtures", "Immunity, 4× weakness, ¼× resistance, coverage, STAB and ties", function () {
+      var cases = [
+        { mon: { type1: "Fire", type2: "Flying", moves: ["Fire", "Flying", "Grass", "Dragon"] }, target: "Water", defence: 2, offence: 2, best: ["Grass"] },
+        { mon: { type1: "Fire", type2: "Flying", moves: ["Fire", "Flying", null, null] }, target: "Rock", defence: 4, offence: .75, best: ["Fire", "Flying"] },
+        { mon: { type1: "Water", type2: "Dragon", moves: ["Water", "Dragon", null, null] }, target: "Fire", defence: .25, offence: 3, best: ["Water"] },
+        { mon: { type1: "Ground", type2: null, moves: ["Ground", "Rock", null, null] }, target: "Electric", defence: 0, offence: 3, best: ["Ground"] },
+        { mon: { type1: "Normal", type2: null, moves: ["Normal", "Fighting", null, null] }, target: "Ghost", defence: 0, offence: 0, best: ["Normal", "Fighting"] },
+        { mon: { type1: "Steel", type2: "Fairy", moves: ["Steel", "Fairy", null, null] }, target: "Poison", defence: 0, offence: 1.5, best: ["Steel"] },
+        { mon: { type1: "Bug", type2: "Steel", moves: ["Bug", "Steel", null, null] }, target: "Ground", defence: 1, offence: 1.5, best: ["Bug", "Steel"] },
+        { mon: { type1: "Ground", type2: "Flying", moves: ["Ground", "Flying", null, null] }, target: "Electric", defence: 0, offence: 3, best: ["Ground"] }
+      ];
+      cases.forEach(function (fixture) {
+        var defence = Engine.calculateDefence(fixture.mon, fixture.target).total;
+        var offence = Engine.calculateBestOffence(fixture.mon, fixture.target);
+        assert(defence === fixture.defence,
+          "Defence failed " + fixture.mon.type1 + "/" + fixture.mon.type2 + " vs " + fixture.target + ": " + defence);
+        assert(offence.score === fixture.offence,
+          "Offence failed " + fixture.mon.type1 + "/" + fixture.mon.type2 + " vs " + fixture.target + ": " + offence.score);
+        assert(JSON.stringify(offence.best.map(function (r) { return r.moveType; })) === JSON.stringify(fixture.best),
+          "Best move tie failed vs " + fixture.target);
+      });
+    });
+
+    test("Dual-target regression fixtures", "Known dual typings that a single-type view gets wrong", function () {
+      var cases = [
+        // Grass is the classic trap: 2x on Water, but 4x on Water/Ground.
+        { moves: ["Grass"], target: ["Water", "Ground"], expected: 4 },
+        // Electric answers Water, and is dead against Water/Ground.
+        { moves: ["Electric"], target: ["Water", "Ground"], expected: 0 },
+        // Ice against Dragon/Flying is the other 4x everyone forgets.
+        { moves: ["Ice"], target: ["Dragon", "Flying"], expected: 4 },
+        // Steel/Flying quarter-resists Bug.
+        { moves: ["Bug"], target: ["Steel", "Flying"], expected: .25 },
+        // Ghost/Dark has no immunity between them but Normal is blocked by Ghost.
+        { moves: ["Normal"], target: ["Ghost", "Dark"], expected: 0 }
+      ];
+      cases.forEach(function (fixture) {
+        var mon = { type1: null, type2: null, moves: fixture.moves };
+        var offence = Engine.calculateBestOffence(mon, fixture.target);
+        assert(offence.score === fixture.expected,
+          fixture.moves[0] + " vs " + fixture.target.join("/") + " gave " + offence.score +
+          ", expected " + fixture.expected);
+      });
+    });
+
+    /* ---------- State ---------- */
+
+    test("State integrity", "Six slots, empty by default, unique move types, type 1 gates everything", function () {
+      var fresh = Engine.defaultState();
+      assert(fresh.mons.length === 6, "Default state does not contain six slots");
+      assert(fresh.mons.every(function (m) { return !m.type1 && !m.type2 && m.moves.every(function (x) { return x === null; }); }),
+        "Default state is not empty — no personal squad may ship as a default");
+
+      var sample = Engine.sanitiseState({
+        analysisMode: "selection",
+        mons: [
+          { type1: "Fire", type2: "Flying", moves: ["Grass", "Grass", "Water", "Fake"], bring: true },
+          { type1: "Water", moves: ["Water"], bring: true },
+          { type1: "Grass", moves: ["Grass"], bring: true },
+          { type1: "Electric", moves: ["Electric"], bring: true },
+          { type1: "Dark", moves: ["Dark"], bring: true },
+          { type1: "Fairy", moves: ["Fairy"], bring: true }
+        ]
+      });
+      assert(sample.mons.length === 6, "State does not contain six slots");
+      assert(sample.mons[0].moves.filter(Boolean).length === 2, "Duplicate or invalid moves were not removed");
+      assert(sample.analysisMode === "selection", "Selection mode was not preserved");
+
+      var invalid = Engine.sanitiseState({ mons: [{ type1: null, type2: "Fairy", moves: ["Fairy"], bring: true }] });
+      assert(invalid.mons[0].type2 === null &&
+        invalid.mons[0].moves.every(function (m) { return m === null; }) &&
+        !invalid.mons[0].bring, "Fields survived without a required type 1");
+
+      var sameType = Engine.sanitiseMon({ type1: "Fire", type2: "Fire", moves: [] });
+      assert(sameType.type2 === null, "A Pokémon was allowed the same type twice");
+
+      assert(Engine.sanitiseState(null).mons.length === 6, "Null input did not fall back to a clean state");
+      assert(Engine.sanitiseState("garbage").mons.length === 6, "Garbage input did not fall back to a clean state");
+    });
+
+    test("Team code round trip", "Encode then decode reproduces the squad exactly", function () {
+      var original = Engine.sanitiseState({
+        mons: [
+          { type1: "Fire", type2: "Flying", moves: ["Fire", "Flying", "Grass", "Dragon"], bring: true },
+          { type1: "Water", type2: "Ground", moves: ["Water", "Ground", "Ice", "Rock"], bring: true },
+          { type1: "Grass", type2: "Steel", moves: ["Grass", "Steel", "Fighting", "Dark"], bring: false },
+          { type1: "Electric", type2: "Fairy", moves: ["Electric", "Fairy", null, null], bring: false },
+          { type1: "Dragon", type2: null, moves: ["Dragon", null, null, null], bring: false },
+          { type1: null, type2: null, moves: [null, null, null, null], bring: false }
+        ]
+      });
+      var code = Engine.encodeTeamCode(original);
+      assert(!/[+/=]/.test(code), "Team code is not base64url safe: " + code);
+      var restored = Engine.decodeTeamCode(code);
+      assert(JSON.stringify(restored.mons) === JSON.stringify(original.mons), "Round trip changed the squad");
+
+      var threw = false;
+      try { Engine.decodeTeamCode("not-a-real-code"); } catch (e) { threw = true; }
+      assert(threw, "Malformed team code was accepted");
+    });
+
+    test("Matchup net tally", "Counts each active Pokémon once as an attacker and once as a weakness", function () {
+      var mons = [
+        { index: 0, mon: { type1: "Fire", type2: "Flying", moves: ["Grass", "Fire", null, null] } },
+        { index: 1, mon: { type1: "Water", type2: null, moves: ["Water", "Ice", null, null] } },
+        { index: 2, mon: { type1: "Electric", type2: null, moves: ["Electric", "Normal", null, null] } }
+      ];
+      var water = Engine.calculateTypeBalance(mons, "Water");
+      assert(water.offensiveCount === 2, "Expected two Water answers, found " + water.offensiveCount);
+      assert(water.weaknessCount === 1, "Expected one Water weakness, found " + water.weaknessCount);
+      assert(water.net === 1, "Expected Water net +1, found " + water.net);
+      assert(JSON.stringify(water.attackers) === JSON.stringify([0, 2]), "Water attacker contributors were wrong");
+      assert(JSON.stringify(water.weaknesses) === JSON.stringify([0]), "Water weakness contributors were wrong");
+
+      var summary = Engine.calculateTeamSummary(mons);
+      assert(summary.rows.length === 18, "Summary must cover all 18 types");
+      assert(summary.positive + summary.even + summary.negative === 18, "Row balance does not total 18");
+    });
+
+    test("Defensive tiers", "Three-tier survival summary maps the six buckets without gaps", function () {
+      var fixtures = [[0, "resist"], [.25, "resist"], [.5, "resist"], [1, "neutral"], [2, "weak"], [4, "weak"]];
+      fixtures.forEach(function (pair) {
+        assert(Engine.defenceTier(pair[0]) === pair[1],
+          "Tiered " + pair[0] + " as " + Engine.defenceTier(pair[0]) + ", expected " + pair[1]);
+      });
+      Tokens.DEFENCE_BUCKETS.forEach(function (bucket) {
+        var tier = Engine.defenceTier(bucket.value);
+        assert(tier === "resist" || tier === "neutral" || tier === "weak",
+          "Bucket " + bucket.key + " has no tier");
+        assert((bucket.zone === "danger") === (tier === "weak"),
+          "Bucket " + bucket.key + " zone and tier disagree");
+      });
+    });
+
+    test("Aggregation is single-sourced", "Counts derive from the records, across all 18 types", function () {
+      var squad = [
+        { type1: "Fire", type2: "Flying", moves: ["Fire", "Flying", "Grass", "Dragon"] },
+        { type1: "Water", type2: "Ground", moves: ["Water", "Ground", "Ice", "Rock"] },
+        { type1: "Grass", type2: "Steel", moves: ["Grass", "Steel", "Fighting", "Dark"] },
+        { type1: "Electric", type2: "Fairy", moves: ["Electric", "Fairy", "Ice", "Psychic"] },
+        { type1: "Dragon", type2: "Ghost", moves: ["Dragon", "Ghost", "Fire", "Fighting"] },
+        { type1: "Dark", type2: "Poison", moves: ["Dark", "Poison", "Ground", "Bug"] }
+      ].map(function (mon, index) { return { index: index, mon: mon }; });
+
+      TYPES.forEach(function (type) {
+        var balance = Engine.calculateTypeBalance(squad, type);
+        assert(balance.answers.length === balance.offensiveCount, "Answer count drifted for " + type);
+        assert(balance.exposures.length === balance.weaknessCount, "Exposure count drifted for " + type);
+        assert(JSON.stringify(balance.attackers) === JSON.stringify(balance.answers.map(function (e) { return e.index; })),
+          "Attacker indices drifted for " + type);
+        assert(JSON.stringify(balance.weaknesses) === JSON.stringify(balance.exposures.map(function (e) { return e.index; })),
+          "Weakness indices drifted for " + type);
+        assert(balance.net === balance.answers.length - balance.exposures.length,
+          "Net is not a raw count for " + type);
+        balance.answers.forEach(function (entry) {
+          assert(entry.score >= 2, type + " answer below 2×: " + entry.score);
+          assert(TYPES.indexOf(entry.moveType) !== -1, type + " answer carries no move type");
+          assert(entry.tier === Engine.defenceTier(entry.defence), type + " answer tier contradicts its defence");
+        });
+        balance.exposures.forEach(function (entry) {
+          assert(entry.defence >= 2, type + " exposure below 2×: " + entry.defence);
+        });
+      });
+
+      var electric = Engine.calculateTypeBalance(squad, "Electric");
+      assert(JSON.stringify(electric.exposures) === JSON.stringify([{ index: 0, defence: 2 }]),
+        "Electric exposure fixture changed");
+      assert(electric.answers.length === 2, "Expected two Electric answers, found " + electric.answers.length);
+      assert(electric.answers[0].index === 1 && electric.answers[0].moveType === "Ground" &&
+        electric.answers[0].score === 3 && electric.answers[0].tier === "resist",
+        "Ground STAB answer from an Electric-immune slot changed");
+      assert(electric.answers[1].index === 5 && electric.answers[1].moveType === "Ground" &&
+        electric.answers[1].score === 2 && electric.answers[1].tier === "neutral",
+        "Ground coverage answer from a neutral slot changed");
+      assert(electric.net === 1, "Expected Electric net +1, found " + electric.net);
+    });
+
+    /* ---------- Design tokens ---------- */
+
+    test("Palette completeness", "18 valid colours, 18 abbreviations, readable text on every swatch", function () {
+      assert(Object.keys(Tokens.TYPE_COLORS).length === 18,
+        "Expected 18 colours, found " + Object.keys(Tokens.TYPE_COLORS).length);
+      assert(Object.keys(Tokens.TYPE_ABBR).length === 18,
+        "Expected 18 abbreviations, found " + Object.keys(Tokens.TYPE_ABBR).length);
+      assert(new Set(Object.values(Tokens.TYPE_ABBR)).size === 18, "Duplicate type abbreviation");
+
+      TYPES.forEach(function (type) {
+        var hex = Tokens.TYPE_COLORS[type];
+        assert(/^#[0-9A-Fa-f]{6}$/.test(hex), "Invalid hex for " + type + ": " + hex);
+        assert(Tokens.TYPE_ABBR[type], "Missing abbreviation for " + type);
+        var fg = Tokens.contrastText(hex);
+        assert(fg === "#172033" || fg === "#ffffff", "Unexpected text colour for " + type);
+      });
+
+      assert(Tokens.mixHex("#000000", "#ffffff", 0) === "#000000", "mixHex at 0 did not return the first colour");
+      assert(Tokens.mixHex("#000000", "#ffffff", 1) === "#ffffff", "mixHex at 1 did not return the second colour");
+    });
+
+    test("Theme parity", "Light and dark define exactly the same token names", function () {
+      var light = Object.keys(Tokens.THEME.light).sort();
+      var dark = Object.keys(Tokens.THEME.dark).sort();
+      assert(JSON.stringify(light) === JSON.stringify(dark),
+        "Light and dark themes define different tokens");
+      assert(light.length > 0, "Theme defines no tokens");
+    });
+
+    return {
+      ok: tests.every(function (t) { return t.ok; }),
+      tests: tests,
+      assertions: assertions,
+      defensiveCases: defensiveCases,
+      offensiveCases: offensiveCases,
+      dualCases: dualCases
+    };
+  };
+});
+
+</script>
+<script>(() => {
+  "use strict";
+
+  /*
+   * Canonical type data and matchup maths live in Pokemon_Type_Engine.
+   * Nothing in this file redefines them. One chart, one set of maths, one suite.
+   * Everything below is an alias so the render code reads unchanged.
+   */
+  const Engine = window.PokemonTypeEngine;
+  const Tokens = window.PokemonDesignTokens;
+  const runEngineDiagnostics = window.runDiagnostics;
+  if (!Engine || !Tokens || !runEngineDiagnostics) {
+    throw new Error("Load type-engine.js, design-tokens.js and engine.test.js before this script");
+  }
+
+  const {
+    TYPES, effectiveness, calculateDefence, defenceKey, defenceTier,
+    calculateMoveResult, calculateBestOffence, classifyOffence,
+    calculateTypeBalance, calculateTeamSummary, formatMultiplier,
+    sanitiseMon, encodeTeamCode
+  } = Engine;
+  const {TYPE_COLORS, TYPE_ABBR, mixHex, contrastText} = Tokens;
+
+  const STORAGE_KEY = "pokemon-team-type-index-v1";
+
+  /*
+   * The demo squad, held as a team code rather than a literal array. Refreshing it is then a
+   * paste of whatever the Team code dialog exports, with no chance of a transcription slip.
+   * runDiagnostics() decodes it on every load, so a bad paste fails the badge instead of
+   * quietly loading an empty squad.
+   */
+  const DEMO_TEAM_CODE = "eyJ2IjoxLCJtb25zIjpbeyJ0MSI6IkdyYXNzIiwidDIiOiJQb2lzb24iLCJtIjpbIkdyYXNzIiwiUG9pc29uIixudWxsLG51bGxdLCJiIjpmYWxzZX0seyJ0MSI6IkZpcmUiLCJ0MiI6bnVsbCwibSI6WyJGaXJlIiwiR3JvdW5kIixudWxsLG51bGxdLCJiIjpmYWxzZX0seyJ0MSI6IkZpcmUiLCJ0MiI6IkZseWluZyIsIm0iOlsiRmlyZSIsIkdyYXNzIixudWxsLG51bGxdLCJiIjpmYWxzZX0seyJ0MSI6IkZpcmUiLCJ0MiI6IkRhcmsiLCJtIjpbIkZpcmUiLCJEYXJrIixudWxsLG51bGxdLCJiIjpmYWxzZX0seyJ0MSI6IkdyYXNzIiwidDIiOiJGYWlyeSIsIm0iOlsiR3Jhc3MiLCJGYWlyeSIsbnVsbCxudWxsXSwiYiI6ZmFsc2V9LHsidDEiOiJEcmFnb24iLCJ0MiI6Ikdyb3VuZCIsIm0iOlsiRHJhZ29uIiwiR3JvdW5kIiwiUm9jayIsbnVsbF0sImIiOmZhbHNlfV19";
+  // The engine owns the squad shape. The app layers its own view settings on top of it.
+  const emptyMon = Engine.emptyMon;
+  const defaultState = () => ({
+    ...Engine.defaultState(),
+    view: "setup", displayMode: "effectiveness", chartColour: "defence", chartSort: "net"
+  });
+  let state = loadState();
+  let pickerContext = null;
+  let lastUndoState = null;
+  let toastTimer = null;
+  let diagnostics = null;
+  let longPressTimer = null;
+  let longPressMarker = null;
+  let longPressStart = null;
+  let suppressNextMarkerClick = false;
+
+  const els = {
+    coffeeView: document.getElementById("coffeeView"),
+    setupView: document.getElementById("setupView"), analyticsView: document.getElementById("analyticsView"), exposureView: document.getElementById("exposureView"), exposureContent: document.getElementById("exposureContent"),
+    teamGrid: document.getElementById("teamGrid"), configuredCount: document.getElementById("configuredCount"), selectedCount: document.getElementById("selectedCount"),
+    analyticsContent: document.getElementById("analyticsContent"), selectedStrip: document.getElementById("selectedStrip"), selectionModeButton: document.getElementById("selectionModeButton"), selectionModeNote: document.getElementById("selectionModeNote"), clearSelectionButton: document.getElementById("clearSelectionButton"),
+    typePickerDialog: document.getElementById("typePickerDialog"), typePickerTitle: document.getElementById("typePickerTitle"), typePickerSubtitle: document.getElementById("typePickerSubtitle"), typePickerGrid: document.getElementById("typePickerGrid"), clearPickerValue: document.getElementById("clearPickerValue"),
+    detailDialog: document.getElementById("detailDialog"), detailTitle: document.getElementById("detailTitle"), detailSubtitle: document.getElementById("detailSubtitle"), detailBody: document.getElementById("detailBody"),
+    diagnosticsDialog: document.getElementById("diagnosticsDialog"), diagnosticsBody: document.getElementById("diagnosticsBody"), diagnosticsButton: document.getElementById("diagnosticsButton"), engineBadgeText: document.getElementById("engineBadgeText"),
+    teamCodeDialog: document.getElementById("teamCodeDialog"), teamCodeArea: document.getElementById("teamCodeArea"), quickPeek: document.getElementById("quickPeek"),
+    toast: document.getElementById("toast"), toastMessage: document.getElementById("toastMessage"), toastAction: document.getElementById("toastAction"), undoButton: document.getElementById("undoButton")
+  };
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return sanitiseState(parsed);
+    } catch (error) {
+      return defaultState();
+    }
+  }
+  function sanitiseState(input) {
+    const clean = defaultState();
+    if (!input || typeof input !== "object") return clean;
+    clean.view = input.view === "analytics" || input.view === "exposure" ? input.view : "setup";
+    clean.analysisMode = input.analysisMode === "selection" || input.analysisMode === "four" ? "selection" : "six";
+    clean.displayMode = input.displayMode === "moves" ? "moves" : "effectiveness";
+    clean.chartColour = input.chartColour === "move" ? "move" : "defence";
+    clean.chartSort = input.chartSort === "type" ? "type" : "net";
+    if (Array.isArray(input.mons)) {
+      clean.mons = Array.from({length:6}, (_, index) => sanitiseMon(input.mons[index]));
+    }
+    return clean;
+  }
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* Offline file remains functional without persistence. */ }
+  }
+
+
+  function typeToken(type) {
+    if (!type) return `<span class="field-placeholder">Choose type</span>`;
+    return `<span class="type-token" style="--type-color:${TYPE_COLORS[type]}"><span class="type-dot"></span><span class="type-name">${type}</span></span>`;
+  }
+  function configuredMons() { return state.mons.map((mon,index) => ({mon,index})).filter(item => item.mon.type1); }
+  function selectedMons() { return configuredMons().filter(item => item.mon.bring); }
+  function activeMons() { return state.analysisMode === "selection" ? selectedMons() : configuredMons(); }
+
+  function renderAll() {
+    renderNavigation();
+    renderSetup();
+    renderAnalyticsControls();
+    renderAnalytics();
+    renderExposure();
+    updateDiagnosticsBadge();
+    saveState();
+  }
+  function renderNavigation() {
+    document.querySelectorAll(".nav-tab").forEach(button => button.classList.toggle("active", button.dataset.view === state.view));
+    els.setupView.hidden = state.view !== "setup";
+    els.analyticsView.hidden = state.view !== "analytics";
+    els.exposureView.hidden = state.view !== "exposure";
+    els.coffeeView.hidden = state.view !== "coffee";
+  }
+  function renderSetup() {
+    const configured = configuredMons().length;
+    const selected = selectedMons().length;
+    els.configuredCount.textContent = `${configured} / 6`;
+    els.selectedCount.textContent = `${selected} / 6`;
+    els.undoButton.hidden = !lastUndoState;
+    els.teamGrid.innerHTML = state.mons.map((mon, index) => {
+      const status = !mon.type1 ? "Empty slot" : mon.moves.some(Boolean) ? `${mon.type1}${mon.type2 ? ` / ${mon.type2}` : ""} · ${mon.moves.filter(Boolean).length} move types` : `${mon.type1}${mon.type2 ? ` / ${mon.type2}` : ""} · no moves`;
+      return `
+        <article class="mon-card">
+          <div class="mon-card-head">
+            <div class="mon-index">P${index + 1}</div>
+            <div class="mon-title"><strong>Team slot ${index + 1}</strong><span>${status}</span></div>
+            <button class="icon-button" data-action="clear-mon" data-mon="${index}" aria-label="Clear P${index + 1}" ${!mon.type1 && !mon.moves.some(Boolean) ? "disabled" : ""}>⌫</button>
+          </div>
+          <div class="mon-card-body">
+            <div class="field-label">Pokémon typing <span>Type 2 is optional</span></div>
+            <div class="type-fields">
+              <button class="type-field" data-action="pick-type" data-mon="${index}" data-field="type1">${typeToken(mon.type1)}<span class="chevron">▼</span></button>
+              <button class="type-field" data-action="pick-type" data-mon="${index}" data-field="type2" ${!mon.type1 ? "disabled" : ""}>${mon.type2 ? typeToken(mon.type2) : `<span class="field-placeholder">Optional type 2</span>`}<span class="chevron">▼</span></button>
+            </div>
+            <div class="field-label">Move types <span>Up to four</span></div>
+            <div class="moves-grid">
+              ${mon.moves.map((move, moveIndex) => `<button class="move-field" data-action="pick-move" data-mon="${index}" data-move="${moveIndex}" ${!mon.type1 ? "disabled" : ""}>${move ? typeToken(move) : `<span class="field-placeholder">Move ${moveIndex + 1}</span>`}<span class="chevron">▼</span></button>`).join("")}
+            </div>
+          </div>
+        </article>`;
+    }).join("");
+  }
+  function renderAnalyticsControls() {
+    const selected = selectedMons();
+    document.querySelectorAll("[data-analysis-mode]").forEach(button => button.classList.toggle("active", button.dataset.analysisMode === state.analysisMode));
+    document.querySelectorAll("[data-display-mode]").forEach(button => button.classList.toggle("active", button.dataset.displayMode === state.displayMode));
+    els.selectedStrip.innerHTML = state.mons.map((mon,index) => {
+      const isSelected = Boolean(mon.bring && mon.type1);
+      const stateText = !mon.type1 ? "not configured" : isSelected ? "selected" : "not selected";
+      return `<button class="selection-mini ${isSelected ? "selected" : "unselected"}" data-action="toggle-bring" data-mon="${index}" ${!mon.type1 ? "disabled" : ""} aria-pressed="${isSelected}" aria-label="P${index+1}, ${stateText}" title="P${index+1} · ${stateText}">P${index+1}</button>`;
+    }).join("");
+    els.selectionModeNote.textContent = state.analysisMode === "selection" ? `${selected.length} selected and currently analysed.` : `${selected.length} selected · switch to Selection to analyse this subset.`;
+    els.clearSelectionButton.disabled = selected.length === 0;
+  }
+  function renderAnalytics() {
+    const previousScroll = (() => {
+      const scroller = document.getElementById("chartScroll");
+      return scroller ? {left:scroller.scrollLeft, top:scroller.scrollTop} : null;
+    })();
+    hideQuickPeek();
+    if (!diagnostics || !diagnostics.ok) {
+      els.analyticsContent.innerHTML = `<div class="chart-panel"><div class="engine-error"><div class="empty-icon">!</div><h2>Type engine validation failed</h2><p>Analytics have been disabled so the app cannot display unreliable results. Open diagnostics for the exact failed check.</p></div></div>`;
+      return;
+    }
+    const mons = activeMons();
+    if (!mons.length) {
+      const message = state.analysisMode === "selection" ? "No Pokémon are selected. Use the P1–P6 controls above to analyse any subset from one to six." : "Configure at least one Pokémon type to populate the matchup map.";
+      els.analyticsContent.innerHTML = `<div class="summary-strip"><div class="summary-card"><span class="summary-label">Analysing</span><span class="summary-value">0 Pokémon</span></div></div><div class="chart-panel"><div class="empty-state"><div class="empty-icon">P?</div><h2>No active team slots</h2><p>${message}</p>${state.analysisMode === "six" ? `<button class="button primary" data-action="go-setup">Set up the team</button>` : ""}</div></div>`;
+      return;
+    }
+    const buckets = [
+      {key:"4", label:"4× weak", sub:"Severe weakness", zone:"danger-zone"},
+      {key:"2", label:"2× weak", sub:"Weakness", zone:"danger-zone"},
+      {key:"1", label:"1× normal", sub:"Neutral", zone:""},
+      {key:"0.5", label:"½× resist", sub:"Resistance", zone:"safe-zone"},
+      {key:"0.25", label:"¼× resist", sub:"Double resist", zone:"safe-zone"},
+      {key:"0", label:"Immune", sub:"No damage", zone:"safe-zone"}
+    ];
+    const summary = calculateTeamSummary(mons);
+    const header = `<div class="matchup-row header-row" role="row"><div class="matchup-cell sticky-type" role="columnheader"><span class="incoming-head">Incoming</span></div>${buckets.map(bucket => `<div class="matchup-cell" role="columnheader"><span class="bucket-head"><strong>${bucket.label}</strong><span>${bucket.sub}</span></span></div>`).join("")}<div class="matchup-cell net-cell" role="columnheader"><span class="bucket-head"><strong>Matchup net</strong><span>SE − weak</span></span></div></div>`;
+    const rows = TYPES.map(targetType => {
+      const grouped = Object.fromEntries(buckets.map(bucket => [bucket.key, []]));
+      for (const item of mons) {
+        const defence = calculateDefence(item.mon, targetType);
+        const offence = calculateBestOffence(item.mon, targetType);
+        grouped[defenceKey(defence.total)].push(markerHTML(item.index, item.mon, targetType, defence, offence));
+      }
+      const balance = calculateTypeBalance(mons, targetType);
+      const netClass = balance.net > 0 ? "positive" : balance.net < 0 ? "negative" : "";
+      return `<div class="matchup-row data-row" role="row" data-row-type="${targetType}">
+        <div class="matchup-cell sticky-type" role="rowheader"><span class="row-type" style="--type-color:${TYPE_COLORS[targetType]}">${targetType}</span></div>
+        ${buckets.map(bucket => `<div class="matchup-cell ${bucket.zone}" role="cell" data-defence-bucket="${bucket.key}">${grouped[bucket.key].join("")}</div>`).join("")}
+        <div class="matchup-cell net-cell" role="cell"><button class="net-tally ${netClass}" data-action="show-net-detail" data-target="${targetType}" aria-label="${targetType}: ${balance.offensiveCount} super-effective attackers minus ${balance.weaknessCount} weaknesses equals ${formatSigned(balance.net)}">${balance.offensiveCount} − ${balance.weaknessCount} = ${formatSigned(balance.net)}</button></div>
+      </div>`;
+    }).join("");
+    els.analyticsContent.innerHTML = `
+      ${summaryHTML(summary, mons.length)}
+      <section class="chart-panel" aria-label="Team type matchup chart">
+        <div class="chart-panel-head">
+          <div><strong>${state.analysisMode === "selection" ? "Selection" : "Full squad"} · ${mons.length} active</strong><span>Position shows defence. Colour shows the best entered move. Hold a marker for a quick read; tap for full detail.</span></div>
+          <span class="swipe-hint">Swipe chart horizontally →</span>
+        </div>
+        <div id="chartScroll" class="chart-scroll">
+          <div class="matchup-table" role="table" aria-label="Defensive position, offensive colour and matchup net by incoming type">${header}${rows}</div>
+        </div>
+        ${legendHTML()}
+      </section>`;
+    if (previousScroll) requestAnimationFrame(() => {
+      const scroller = document.getElementById("chartScroll");
+      if (scroller) { scroller.scrollLeft = previousScroll.left; scroller.scrollTop = previousScroll.top; }
+    });
+  }
+  function exposureRows(mons) {
+    const rows = TYPES.map(type => ({type, ...calculateTypeBalance(mons, type)}));
+    if (state.chartSort !== "net") return rows;
+    return rows.slice().sort((a, b) => a.net - b.net || TYPES.indexOf(a.type) - TYPES.indexOf(b.type));
+  }
+  function exposureBlockHTML(entry, targetType) {
+    const label = `P${entry.index + 1}`;
+    const aria = `${label} answers ${targetType} with ${entry.moveType} for ${formatMultiplier(entry.score)}, and takes ${formatMultiplier(entry.defence)} from it`;
+    if (state.chartColour === "move" && entry.moveType) {
+      const base = TYPE_COLORS[entry.moveType];
+      const ring = entry.tier === "resist" ? "ring-resist" : entry.tier === "weak" ? "ring-weak" : "";
+      return `<button class="exp-block move-fill ${ring}" style="--move-bg:${base};--move-fg:${contrastText(base)}" data-action="show-detail" data-mon="${entry.index}" data-target="${targetType}" data-quick="${escapeAttribute(aria)}" aria-label="${escapeAttribute(aria)}">${label}</button>`;
+    }
+    return `<button class="exp-block tier-${entry.tier}" data-action="show-detail" data-mon="${entry.index}" data-target="${targetType}" data-quick="${escapeAttribute(aria)}" aria-label="${escapeAttribute(aria)}">${label}</button>`;
+  }
+  function exposureLegendHTML() {
+    const tierItems = state.chartColour === "move"
+      ? `<span><span class="swatch" style="background:${TYPE_COLORS.Ground};border-color:${TYPE_COLORS.Ground}"></span>Move type that answers</span>
+         <span><span class="swatch" style="background:transparent;border:2px solid var(--safe)"></span>Answerer resists</span>
+         <span><span class="swatch" style="background:transparent;border:1px solid var(--line-strong)"></span>Answerer neutral</span>
+         <span><span class="swatch" style="background:transparent;border:2px solid var(--danger-deep)"></span>Answerer weak</span>`
+      : `<span><span class="swatch" style="background:var(--safe);border-color:var(--safe-ink)"></span>Resists and hits back</span>
+         <span><span class="swatch" style="background:transparent;border-color:var(--safe)"></span>Neutral and hits back</span>
+         <span><span class="swatch" style="background:var(--amber-soft);border-color:var(--amber-line)"></span>Weak but still hits back</span>`;
+    return `<div class="exp-legend" aria-label="Exposure chart legend">
+      <span><span class="swatch" style="background:var(--danger-deep);border-color:var(--danger-deep-line)"></span>4× weak</span>
+      <span><span class="swatch" style="background:var(--danger-soft);border-color:var(--danger-line)"></span>2× weak</span>
+      ${tierItems}
+    </div>`;
+  }
+  function renderExposure() {
+    document.querySelectorAll("[data-chart-colour]").forEach(button => button.classList.toggle("active", button.dataset.chartColour === state.chartColour));
+    document.querySelectorAll("[data-chart-sort]").forEach(button => button.classList.toggle("active", button.dataset.chartSort === state.chartSort));
+    if (!diagnostics || !diagnostics.ok) {
+      els.exposureContent.innerHTML = `<div class="exp-panel"><div class="engine-error"><div class="empty-icon">!</div><h2>Type engine validation failed</h2><p>Analytics have been disabled so the app cannot display unreliable results. Open diagnostics for the exact failed check.</p></div></div>`;
+      return;
+    }
+    const mons = activeMons();
+    if (!mons.length) {
+      const message = state.analysisMode === "selection" ? "No Pokémon are selected. Use the P1–P6 controls on the matchup grid to analyse any subset." : "Configure at least one Pokémon type to populate the exposure chart.";
+      els.exposureContent.innerHTML = `<div class="exp-panel"><div class="empty-state"><div class="empty-icon">P?</div><h2>No active team slots</h2><p>${message}</p><button class="button primary" data-action="go-setup">Set up the team</button></div></div>`;
+      return;
+    }
+    const rows = exposureRows(mons).map(row => {
+      const exposed = row.exposures.map(entry => {
+        const aria = `P${entry.index + 1} takes ${formatMultiplier(entry.defence)} from ${row.type}`;
+        return `<button class="exp-block ${entry.defence === 4 ? "weak-4" : "weak-2"}" data-action="show-detail" data-mon="${entry.index}" data-target="${row.type}" data-quick="${escapeAttribute(aria)}" aria-label="${escapeAttribute(aria)}">P${entry.index + 1}</button>`;
+      }).join("");
+      const answers = row.answers.map(entry => exposureBlockHTML(entry, row.type)).join("");
+      const netClass = row.net > 0 ? "positive" : row.net < 0 ? "negative" : "";
+      return `<div class="exp-row" role="row" data-row-type="${row.type}">
+        <span class="exp-chip" style="--type-color:${TYPE_COLORS[row.type]}" role="rowheader">${row.type}</span>
+        <div class="exp-left" role="cell">${exposed}</div>
+        <div class="exp-axis" aria-hidden="true"></div>
+        <div class="exp-right" role="cell">${answers}</div>
+        <button class="exp-net ${netClass}" data-action="show-net-detail" data-target="${row.type}" aria-label="${row.type} net ${formatSigned(row.net)}. ${row.offensiveCount} answers minus ${row.weaknessCount} exposed.">${formatSigned(row.net)}</button>
+      </div>`;
+    }).join("");
+    els.exposureContent.innerHTML = `
+      ${summaryHTML(calculateTeamSummary(mons), mons.length)}
+      <section class="exp-panel" aria-label="Exposure and answers by incoming type">
+        <div class="exp-head" role="row">
+          <span>Incoming</span>
+          <span class="to-axis">Exposed</span>
+          <span></span>
+          <span>Answers</span>
+          <span class="to-net">Net</span>
+        </div>
+        <div class="exp-rows" role="table">${rows}</div>
+        ${exposureLegendHTML()}
+      </section>`;
+  }
+  function compactTypeList(rows, limit = 3) {
+    if (!rows.length) return "None";
+    const names = rows.slice(0, limit).map(row => row.type);
+    return `${names.join(" · ")}${rows.length > limit ? ` (${rows.length - limit} more)` : ""}`;
+  }
+  function summaryHTML(summary, activeCount) {
+    const bestValue = summary.best[0]?.net ?? 0;
+    const worstValue = summary.worst[0]?.net ?? 0;
+    return `<section class="summary-strip" aria-label="Matchup summary">
+      <div class="summary-card"><span class="summary-label">Analysing</span><span class="summary-value">${activeCount} Pokémon</span></div>
+      <div class="summary-card"><span class="summary-label">Row balance</span><span class="summary-value">${summary.positive} positive · ${summary.even} even · ${summary.negative} negative</span></div>
+      <div class="summary-card"><span class="summary-label">Best net</span><span class="summary-value positive">${formatSigned(bestValue)} · ${compactTypeList(summary.best)}</span></div>
+      <div class="summary-card"><span class="summary-label">Worst net</span><span class="summary-value ${worstValue < 0 ? "negative" : ""}">${formatSigned(worstValue)} · ${compactTypeList(summary.worst)}</span></div>
+      <div class="summary-card"><span class="summary-label">No SE answer</span><span class="summary-value ${summary.noAnswer.length ? "negative" : "positive"}">${compactTypeList(summary.noAnswer)}</span></div>
+    </section>`;
+  }
+  function formatSigned(value) { return value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : "0"; }
+  function markerHTML(index, mon, targetType, defence, offence) {
+    const classification = classifyOffence(offence.score);
+    const best = offence.best[0] || null;
+    const showMove = state.displayMode === "moves" && offence.score !== null && offence.score >= 1.5 && best;
+    let style = "";
+    let moveClass = "";
+    let label = `P${index + 1}`;
+    if (showMove) {
+      const baseColor = TYPE_COLORS[best.moveType];
+      const bg = offence.score >= 2 ? baseColor : mixHex(baseColor, "var(--surface)", .68);
+      const fg = contrastText(bg);
+      const border = mixHex(baseColor, "#000000", .12);
+      style = `--move-bg:${bg};--move-fg:${fg};--move-border:${border}`;
+      moveClass = "move-type";
+      label = TYPE_ABBR[best.moveType];
+    }
+    const tieExtra = showMove && offence.best.length > 1 ? `<span class="tie-count">+${offence.best.length - 1}</span>` : "";
+    const bestTypes = offence.best.map(result => result.moveType).join(" or ");
+    const quick = offence.score === null
+      ? `P${index + 1} · Defence ${formatMultiplier(defence.total)} · No moves entered`
+      : `P${index + 1} · ${bestTypes || "Best move"} · ${formatMultiplier(offence.score)}${best ? best.stab ? " STAB" : " coverage" : ""} · Defence ${formatMultiplier(defence.total)}`;
+    const aria = `P${index + 1}. Takes ${formatMultiplier(defence.total)} from ${targetType}. ${offence.score === null ? "No move types entered." : `Best attack result ${formatMultiplier(offence.score)}${best ? ` using ${bestTypes}` : ""}.`}`;
+    return `<button class="marker ${classification} ${moveClass}" style="${style}" data-action="show-detail" data-mon="${index}" data-target="${targetType}" data-quick="${escapeAttribute(quick)}" aria-label="${escapeAttribute(aria)}">${label}${tieExtra}</button>`;
+  }
+  function escapeAttribute(value) { return String(value).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function legendHTML() {
+    const strongSwatch = state.displayMode === "moves"
+      ? `<span class="legend-swatch" style="background:${TYPE_COLORS.Grass};border-color:${mixHex(TYPE_COLORS.Grass,"#000000",.12)}"></span>`
+      : `<span class="legend-swatch strong"></span>`;
+    const goodTint = mixHex(TYPE_COLORS.Grass, "var(--surface)", .68);
+    const goodSwatch = state.displayMode === "moves"
+      ? `<span class="legend-swatch" style="background:${goodTint};border-color:${mixHex(TYPE_COLORS.Grass,"#000000",.12)}"></span>`
+      : `<span class="legend-swatch good"></span>`;
+    const strongText = state.displayMode === "moves" ? "Move type · hold to identify" : "Super effective";
+    const goodText = state.displayMode === "moves" ? "Light type tint · hold" : "Neutral STAB";
+    return `<div class="legend" aria-label="Offensive colour legend">
+      <div class="legend-item">${strongSwatch}<span><strong>≥2×</strong><br>${strongText}</span></div>
+      <div class="legend-item">${goodSwatch}<span><strong>1.5×</strong><br>${goodText}</span></div>
+      <div class="legend-item"><span class="legend-swatch neutral"></span><span><strong>1×</strong><br>Neutral coverage</span></div>
+      <div class="legend-item"><span class="legend-swatch weak"></span><span><strong>0.75×</strong><br>Resisted STAB</span></div>
+      <div class="legend-item"><span class="legend-swatch bad"></span><span><strong>≤0.5×</strong><br>Poor or blocked</span></div>
+      <div class="legend-item"><span class="legend-swatch na"></span><span><strong>N/A</strong><br>No moves entered</span></div>
+    </div>`;
+  }
+
+  function openTypePicker(context) {
+    pickerContext = context;
+    const mon = state.mons[context.monIndex];
+    const current = context.field === "move" ? mon.moves[context.moveIndex] : mon[context.field];
+    const label = context.field === "type1" ? "primary type" : context.field === "type2" ? "secondary type" : `move type ${context.moveIndex + 1}`;
+    els.typePickerTitle.textContent = `Choose ${label}`;
+    els.typePickerSubtitle.textContent = `P${context.monIndex + 1} · tap a type to apply it`;
+    els.clearPickerValue.hidden = !current || context.field === "type1";
+    els.typePickerGrid.innerHTML = TYPES.map(type => {
+      let disabled = false;
+      if (context.field === "type1") disabled = mon.type2 === type;
+      if (context.field === "type2") disabled = mon.type1 === type;
+      if (context.field === "move") disabled = mon.moves.some((move, index) => move === type && index !== context.moveIndex);
+      return `<button class="picker-type ${current === type ? "active" : ""}" data-picker-type="${type}" style="--type-color:${TYPE_COLORS[type]}" ${disabled ? "disabled" : ""}><span class="type-dot"></span>${type}</button>`;
+    }).join("");
+    els.typePickerDialog.showModal();
+  }
+  function applyPickerType(type) {
+    if (!pickerContext || !TYPES.includes(type)) return;
+    const mon = state.mons[pickerContext.monIndex];
+    if (pickerContext.field === "move") mon.moves[pickerContext.moveIndex] = type;
+    else mon[pickerContext.field] = type;
+    els.typePickerDialog.close();
+    pickerContext = null;
+    renderAll();
+  }
+  function clearPickerField() {
+    if (!pickerContext) return;
+    const mon = state.mons[pickerContext.monIndex];
+    if (pickerContext.field === "move") mon.moves[pickerContext.moveIndex] = null;
+    else if (pickerContext.field === "type2") mon.type2 = null;
+    els.typePickerDialog.close();
+    pickerContext = null;
+    renderAll();
+  }
+
+  function showMatchupDetail(monIndex, targetType) {
+    const mon = state.mons[monIndex];
+    const defence = calculateDefence(mon, targetType);
+    const offence = calculateBestOffence(mon, targetType);
+    els.detailTitle.textContent = `P${monIndex + 1} against ${targetType}`;
+    els.detailSubtitle.textContent = `${mon.type1}${mon.type2 ? ` / ${mon.type2}` : ""}`;
+    const defenceEquation = `${targetType} → ${mon.type1}: ${formatMultiplier(defence.first)}${mon.type2 ? `<br>${targetType} → ${mon.type2}: ${formatMultiplier(defence.second)}<br><strong>Total: ${formatMultiplier(defence.first)} × ${formatMultiplier(defence.second)} = ${formatMultiplier(defence.total)}</strong>` : `<br><strong>Total: ${formatMultiplier(defence.total)}</strong>`}`;
+    const rows = offence.results.length ? offence.results.map(result => `<tr class="${result.total === offence.score ? "best-row" : ""}">
+      <td>${typeToken(result.moveType)}</td><td>${formatMultiplier(result.base)}</td><td>${result.stab ? "1.5×" : "—"}</td><td><strong>${formatMultiplier(result.total)}</strong>${result.total === offence.score ? ` <span class="best-label">Best</span>` : ""}</td>
+    </tr>`).join("") : `<tr><td colspan="4">No move types entered for P${monIndex + 1}.</td></tr>`;
+    els.detailBody.innerHTML = `
+      <div class="detail-summary">
+        <span class="detail-chip">Defence: ${formatMultiplier(defence.total)}</span>
+        <span class="detail-chip">Best offence: ${formatMultiplier(offence.score)}</span>
+        ${offence.best.map(result => `<span class="detail-chip" style="border-left:5px solid ${TYPE_COLORS[result.moveType]}">${result.moveType}${result.stab ? " STAB" : " coverage"}</span>`).join("")}
+      </div>
+      <section class="detail-section"><h3>Defensive calculation</h3><div class="equation">${defenceEquation}</div></section>
+      <section class="detail-section"><h3>Entered move types</h3><table class="move-results"><thead><tr><th>Move type</th><th>Base</th><th>STAB</th><th>Final</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    els.detailDialog.showModal();
+  }
+
+  function showNetDetail(targetType) {
+    const mons = activeMons();
+    const balance = calculateTypeBalance(mons, targetType);
+    const attackers = balance.attackers.length ? balance.attackers.map(index => `P${index + 1}`).join(", ") : "None";
+    const weaknesses = balance.weaknesses.length ? balance.weaknesses.map(index => `P${index + 1}`).join(", ") : "None";
+    els.detailTitle.textContent = `${targetType} matchup net`;
+    els.detailSubtitle.textContent = `${state.analysisMode === "selection" ? "Selection" : "Full squad"} · ${mons.length} active`;
+    els.detailBody.innerHTML = `
+      <div class="detail-summary">
+        <span class="detail-chip">SE attackers: ${balance.offensiveCount}</span>
+        <span class="detail-chip">Weak Pokémon: ${balance.weaknessCount}</span>
+        <span class="detail-chip">Net: ${formatSigned(balance.net)}</span>
+      </div>
+      <section class="detail-section"><h3>Who hits ${targetType} super effectively</h3><div class="equation">${attackers}</div></section>
+      <section class="detail-section"><h3>Who is weak to ${targetType}</h3><div class="equation">${weaknesses}</div></section>
+      <section class="detail-section"><h3>What the tally means</h3><div class="equation">${balance.offensiveCount} super-effective attackers − ${balance.weaknessCount} weaknesses = <strong>${formatSigned(balance.net)}</strong>.<br>This is a count of type answers and exposures, not a damage or overall battle score.</div></section>`;
+    els.detailDialog.showModal();
+  }
+
+  /*
+   * The engine ships and runs its own suite. The app adds only what the engine cannot
+   * know about, which is its view state. Rendering stays gated on the combined result,
+   * so a failure anywhere still refuses to draw numbers it cannot prove.
+   */
+  function runDiagnostics() {
+    const engineResult = runEngineDiagnostics();
+    const tests = engineResult.tests.slice();
+    let assertions = engineResult.assertions;
+
+    function test(name, detail, fn) {
+      try { fn(); tests.push({name, detail, ok:true}); }
+      catch (error) { tests.push({name, detail:`${detail} — ${error.message}`, ok:false}); }
+    }
+    function assert(condition, message) { assertions++; if (!condition) throw new Error(message); }
+
+    test("View and chart settings round-trip", "Exposure view, block colour and row order survive a save and reload cycle", () => {
+      const kept = sanitiseState({view:"exposure", chartColour:"move", chartSort:"type", mons:[{type1:"Fire"}]});
+      assert(kept.view === "exposure", `Exposure view was dropped, got ${kept.view}`);
+      assert(kept.chartColour === "move", `Block colour was dropped, got ${kept.chartColour}`);
+      assert(kept.chartSort === "type", `Row order was dropped, got ${kept.chartSort}`);
+      const fallback = sanitiseState({view:"nonsense", chartColour:"nonsense", chartSort:"nonsense"});
+      assert(fallback.view === "setup", "Unknown view did not fall back to setup");
+      assert(fallback.chartColour === "defence", "Unknown block colour did not fall back to defence");
+      assert(fallback.chartSort === "net", "Unknown row order did not fall back to net");
+      const defaults = defaultState();
+      assert(defaults.chartColour === "defence" && defaults.chartSort === "net", "Chart defaults are missing");
+      assert(defaults.mons.length === 6 && defaults.mons.every(mon => !mon.type1), "Default state must ship empty");
+    });
+
+    test("Exposure rows cover every type", "One row per type, ordered by net or by canonical type order", () => {
+      const squad = [
+        {mon:{type1:"Fire", type2:"Flying", moves:["Fire","Flying","Grass","Dragon"]}, index:0},
+        {mon:{type1:"Water", type2:"Ground", moves:["Water","Ground","Ice","Rock"]}, index:1}
+      ];
+      const previous = state.chartSort;
+      state.chartSort = "type";
+      const byType = exposureRows(squad);
+      assert(byType.length === 18, `Expected 18 rows, found ${byType.length}`);
+      assert(JSON.stringify(byType.map(row => row.type)) === JSON.stringify(TYPES), "Type order did not match TYPES");
+      state.chartSort = "net";
+      const byNet = exposureRows(squad);
+      assert(byNet.length === 18, `Expected 18 rows, found ${byNet.length}`);
+      for (let i = 1; i < byNet.length; i++) {
+        assert(byNet[i - 1].net <= byNet[i].net, `Net sort broke at ${byNet[i].type}`);
+      }
+      state.chartSort = previous;
+    });
+
+    test("Demo team code decodes", "The demo squad fills all six slots and every move type survives sanitising", () => {
+      const demo = Engine.decodeTeamCode(DEMO_TEAM_CODE);
+      assert(demo.mons.length === 6, `Demo has ${demo.mons.length} slots, expected 6`);
+      assert(demo.mons.every(mon => mon.type1), "Demo left a slot without a primary type");
+      assert(demo.mons.every(mon => mon.moves.some(Boolean)), "Demo left a slot with no move types");
+      // A code carrying a duplicate or unknown move type would lose it silently to the
+      // sanitiser, so compare the decoded count against a re-encode of the same squad.
+      const round = Engine.decodeTeamCode(Engine.encodeTeamCode(demo));
+      assert(JSON.stringify(round.mons) === JSON.stringify(demo.mons), "Demo squad does not survive a re-encode");
+    });
+
+    return {ok:tests.every(item => item.ok), tests, assertions};
+  }
+  function updateDiagnosticsBadge() {
+    if (!diagnostics) return;
+    els.diagnosticsButton.classList.toggle("failed", !diagnostics.ok);
+    els.engineBadgeText.textContent = diagnostics.ok ? "Type engine verified" : "Type engine failed";
+    document.documentElement.dataset.engineStatus = diagnostics.ok ? "passed" : "failed";
+    document.documentElement.dataset.assertions = String(diagnostics.assertions);
+  }
+  function showDiagnostics() {
+    els.diagnosticsBody.innerHTML = `<div class="detail-summary"><span class="detail-chip">${diagnostics.ok ? "✓ All checks passed" : "! Validation failed"}</span><span class="detail-chip">${diagnostics.assertions.toLocaleString()} assertions</span></div><div class="diagnostic-list">${diagnostics.tests.map(test => `<div class="diagnostic-item ${test.ok ? "" : "failed"}"><span class="diagnostic-icon">${test.ok ? "✓" : "✕"}</span><div><strong>${test.name}</strong><span>${test.detail}</span></div></div>`).join("")}</div>`;
+    els.diagnosticsDialog.showModal();
+  }
+
+  function showTeamCode() {
+    els.teamCodeArea.value = encodeTeamCode(state);
+    els.teamCodeDialog.showModal();
+    els.teamCodeArea.select();
+  }
+
+
+  function showQuickPeek(marker) {
+    if (!marker || !marker.dataset.quick) return;
+    const rect = marker.getBoundingClientRect();
+    els.quickPeek.textContent = marker.dataset.quick;
+    els.quickPeek.classList.remove("below");
+    els.quickPeek.classList.add("show");
+    els.quickPeek.setAttribute("aria-hidden", "false");
+    const peekRect = els.quickPeek.getBoundingClientRect();
+    let top = rect.top - peekRect.height - 10;
+    if (top < 8) {
+      top = rect.bottom + 10;
+      els.quickPeek.classList.add("below");
+    }
+    const half = peekRect.width / 2;
+    const left = Math.max(half + 8, Math.min(window.innerWidth - half - 8, rect.left + rect.width / 2));
+    els.quickPeek.style.left = `${left}px`;
+    els.quickPeek.style.top = `${top}px`;
+  }
+  function hideQuickPeek() {
+    els.quickPeek.classList.remove("show", "below");
+    els.quickPeek.setAttribute("aria-hidden", "true");
+  }
+
+  function showToast(message, actionLabel = null, action = null) {
+    clearTimeout(toastTimer);
+    els.toastMessage.textContent = message;
+    els.toastAction.hidden = !actionLabel;
+    els.toastAction.textContent = actionLabel || "";
+    els.toastAction.onclick = action || null;
+    els.toast.classList.add("show");
+    toastTimer = setTimeout(() => els.toast.classList.remove("show"), actionLabel ? 5200 : 2800);
+  }
+  function setView(view) {
+    state.view = view === "analytics" || view === "exposure" || view === "coffee" ? view : "setup";
+    renderAll();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function snapshotForUndo() { lastUndoState = JSON.parse(JSON.stringify(state)); }
+  function clearMon(index) {
+    snapshotForUndo();
+    state.mons[index] = emptyMon();
+    renderAll();
+    showToast(`P${index + 1} cleared`, "Undo", undoClear);
+  }
+  function undoClear() {
+    if (!lastUndoState) return;
+    state = sanitiseState(lastUndoState);
+    lastUndoState = null;
+    els.toast.classList.remove("show");
+    renderAll();
+    showToast("Restored previous squad");
+  }
+  function toggleBring(index) {
+    const mon = state.mons[index];
+    if (!mon.type1) return showToast(`Choose P${index + 1}'s type before selecting it`);
+    mon.bring = !mon.bring;
+    renderAll();
+  }
+  function clearSelection() {
+    if (!selectedMons().length) return;
+    for (const mon of state.mons) mon.bring = false;
+    renderAll();
+    showToast("Selection cleared");
+  }
+  function loadDemo() {
+    if (configuredMons().length && !confirm("Replace the current squad with the demo configuration?")) return;
+    snapshotForUndo();
+    const demo = Engine.decodeTeamCode(DEMO_TEAM_CODE);
+    state = sanitiseState({...state, mons:demo.mons, analysisMode:"six"});
+    renderAll();
+    showToast("Demo squad loaded", "Undo", undoClear);
+  }
+  function clearSquad() {
+    if (!configuredMons().length) return;
+    if (!confirm("Clear all six team slots?")) return;
+    snapshotForUndo();
+    state.mons = Array.from({length:6}, emptyMon);
+    state.analysisMode = "six";
+    renderAll();
+    showToast("Squad cleared", "Undo", undoClear);
+  }
+  function jumpToNeutral() {
+    const scroller = document.getElementById("chartScroll");
+    if (!scroller) return;
+    const target = Math.max(0, parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sticky-col")) + 126 * 2 - scroller.clientWidth / 3);
+    scroller.scrollTo({left:target,behavior:"smooth"});
+  }
+
+  // Grid markers and exposure blocks share the peek behaviour.
+  const PEEKABLE = ".marker, .exp-block";
+  document.addEventListener("pointerover", event => {
+    if (event.pointerType === "touch") return;
+    const marker = event.target.closest(PEEKABLE);
+    if (marker) showQuickPeek(marker);
+  });
+  document.addEventListener("pointerout", event => {
+    if (event.pointerType === "touch") return;
+    const marker = event.target.closest(PEEKABLE);
+    if (marker && !marker.contains(event.relatedTarget)) hideQuickPeek();
+  });
+  document.addEventListener("focusin", event => {
+    const marker = event.target.closest(PEEKABLE);
+    if (marker) showQuickPeek(marker);
+  });
+  document.addEventListener("focusout", event => {
+    if (event.target.closest(PEEKABLE)) hideQuickPeek();
+  });
+  document.addEventListener("pointerdown", event => {
+    const marker = event.target.closest(PEEKABLE);
+    if (!marker || event.pointerType === "mouse") return;
+    longPressMarker = marker;
+    longPressStart = {x:event.clientX, y:event.clientY};
+    clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      if (longPressMarker === marker) {
+        suppressNextMarkerClick = true;
+        showQuickPeek(marker);
+        if (navigator.vibrate) navigator.vibrate(20);
+      }
+    }, 420);
+  }, {passive:true});
+  document.addEventListener("pointermove", event => {
+    if (!longPressMarker || !longPressStart) return;
+    if (Math.hypot(event.clientX - longPressStart.x, event.clientY - longPressStart.y) > 10) {
+      clearTimeout(longPressTimer);
+      longPressMarker = null;
+      longPressStart = null;
+      hideQuickPeek();
+    }
+  }, {passive:true});
+  function endLongPress() {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressMarker = null;
+    longPressStart = null;
+    hideQuickPeek();
+    if (suppressNextMarkerClick) setTimeout(() => { suppressNextMarkerClick = false; }, 650);
+  }
+  document.addEventListener("pointerup", endLongPress, {passive:true});
+  document.addEventListener("pointercancel", endLongPress, {passive:true});
+  window.addEventListener("scroll", hideQuickPeek, true);
+  window.addEventListener("resize", hideQuickPeek);
+
+  document.addEventListener("click", event => {
+    const closeButton = event.target.closest("[data-close-dialog]");
+    if (closeButton) return document.getElementById(closeButton.dataset.closeDialog).close();
+    const nav = event.target.closest("[data-view]");
+    if (nav) return setView(nav.dataset.view);
+    const action = event.target.closest("[data-action]");
+    if (action) {
+      const name = action.dataset.action;
+      const index = Number(action.dataset.mon);
+      if (name === "pick-type") return openTypePicker({monIndex:index,field:action.dataset.field});
+      if (name === "pick-move") return openTypePicker({monIndex:index,field:"move",moveIndex:Number(action.dataset.move)});
+      if (name === "toggle-bring") return toggleBring(index);
+      if (name === "clear-mon") return clearMon(index);
+      if (name === "show-detail") {
+        if (suppressNextMarkerClick) { suppressNextMarkerClick = false; return; }
+        return showMatchupDetail(index, action.dataset.target);
+      }
+      if (name === "show-net-detail") return showNetDetail(action.dataset.target);
+      if (name === "go-setup") return setView("setup");
+    }
+    const pickerType = event.target.closest("[data-picker-type]");
+    if (pickerType) return applyPickerType(pickerType.dataset.pickerType);
+    const analysisMode = event.target.closest("[data-analysis-mode]");
+    if (analysisMode && !analysisMode.disabled) {
+      state.analysisMode = analysisMode.dataset.analysisMode;
+      renderAll();
+      return;
+    }
+    const displayMode = event.target.closest("[data-display-mode]");
+    if (displayMode) {
+      state.displayMode = displayMode.dataset.displayMode;
+      renderAll();
+      return;
+    }
+    const chartColour = event.target.closest("[data-chart-colour]");
+    if (chartColour) {
+      state.chartColour = chartColour.dataset.chartColour;
+      renderAll();
+      return;
+    }
+    const chartSort = event.target.closest("[data-chart-sort]");
+    if (chartSort) {
+      state.chartSort = chartSort.dataset.chartSort;
+      renderAll();
+      return;
+    }
+  });
+
+  document.getElementById("goAnalyticsButton").addEventListener("click", () => setView("analytics"));
+  document.getElementById("backToSetupButton").addEventListener("click", () => setView("setup"));
+  document.getElementById("exposureEditButton").addEventListener("click", () => setView("setup"));
+  document.getElementById("loadDemoButton").addEventListener("click", loadDemo);
+  document.getElementById("clearTeamButton").addEventListener("click", clearSquad);
+  els.undoButton.addEventListener("click", undoClear);
+  els.clearPickerValue.addEventListener("click", clearPickerField);
+  document.getElementById("jumpNeutralButton").addEventListener("click", jumpToNeutral);
+  els.clearSelectionButton.addEventListener("click", clearSelection);
+  els.diagnosticsButton.addEventListener("click", showDiagnostics);
+  document.getElementById("teamCodeButton").addEventListener("click", showTeamCode);
+  document.getElementById("copyTeamCodeButton").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(els.teamCodeArea.value); showToast("Team code copied"); }
+    catch (error) { els.teamCodeArea.select(); document.execCommand("copy"); showToast("Team code copied"); }
+  });
+  document.getElementById("importTeamCodeButton").addEventListener("click", () => {
+    try {
+      snapshotForUndo();
+      // A team code carries a squad, not view preferences. Keep the current UI settings.
+      const imported = Engine.decodeTeamCode(els.teamCodeArea.value);
+      state = sanitiseState({...state, mons:imported.mons});
+      els.teamCodeDialog.close();
+      renderAll();
+      showToast("Team code imported", "Undo", undoClear);
+    } catch (error) { showToast(`Could not import: ${error.message}`); }
+  });
+
+  diagnostics = runDiagnostics();
+  renderAll();
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,1 @@
+    els.coffeeView.hidden = state.view !== "coffee";

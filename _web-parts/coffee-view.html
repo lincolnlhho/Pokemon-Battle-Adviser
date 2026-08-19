@@ -1,0 +1,29 @@
+    <!-- ============ COFFEE VIEW ============ -->
+    <!-- Web-only. Source of truth: battle-adviser/_web-parts/coffee-view.html.
+         This block does not exist in pokemon-analytics/app.html — build-web.mjs
+         injects it at deploy time. Do not hand-edit it in the built page.
+         Styles live in <head>, from _web-parts/coffee-styles.html. -->
+    <section id="coffeeView" class="view" hidden>
+      <div class="view-header">
+        <div>
+          <div class="eyebrow">Support</div>
+          <h1>Enjoying the tool?</h1>
+          <p class="lede">This app is free and always will be. If it has helped you build a better team, a small tip means a lot.</p>
+        </div>
+      </div>
+
+      <div class="coffee-view">
+        <div class="panel">
+          <div class="cup" aria-hidden="true">
+            <div class="steam"><span></span><span></span><span></span></div>
+            <div class="mug"></div>
+            <div class="handle"></div>
+          </div>
+          <p class="fund">Tips fund my puppy's next chew toy! 🐶</p>
+          <!-- STRIPE PAYMENT LINK — currently TEST mode. Swap for the live URL before relying on it. -->
+          <a class="coffee-btn" href="https://buy.stripe.com/test_28EbJ15LsfhyciS0I373G00" target="_blank" rel="noopener">Support the Battle Adviser →</a>
+          <div class="handle-line">Find me on Instagram <a href="https://instagram.com/battle_adviser" target="_blank" rel="noopener">@battle_adviser</a></div>
+          <div class="free-note">No account, no nags — tip only if you want to.</div>
+        </div>
+      </div>
+    </section>

@@ -1,0 +1,1 @@
+    coffeeView: document.getElementById("coffeeView"),
