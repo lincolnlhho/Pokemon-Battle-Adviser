@@ -50,6 +50,10 @@
     --header-deep: #142038;
     --on-header: #ffffff;
     --on-header-dim: rgba(255,255,255,.62);
+    --on-header-good: #7fe0a8;
+    --on-header-bad: #ff9d92;
+    --on-header-good: #7fe0a8;
+    --on-header-bad: #ff9d92;
     --on-solid: #ffffff;
     --on-deep: #ffffff;
 
@@ -74,6 +78,9 @@
 
     --chip: #e5e8ee;
     --chip-line: #cdd2dc;
+
+    --accent: #4a5cc5;
+    --on-accent: #ffffff;
 
     --zone-danger: rgba(200,63,79,.05);
     --zone-safe: rgba(33,138,82,.05);
@@ -132,6 +139,8 @@
       --header-deep: #0a111b;
       --on-header: #ffffff;
       --on-header-dim: rgba(255,255,255,.62);
+      --on-header-good: #7fe0a8;
+      --on-header-bad: #ff9d92;
       --on-solid: #0d1218;
       --on-deep: #ffffff;
 
@@ -156,6 +165,9 @@
 
       --chip: #262d38;
       --chip-line: #3d4859;
+
+      --accent: #8b9af0;
+      --on-accent: #0d1218;
 
       --zone-danger: rgba(232,112,95,.07);
       --zone-safe: rgba(79,189,132,.07);
@@ -223,6 +235,9 @@
 
     --chip: #262d38;
     --chip-line: #3d4859;
+
+    --accent: #8b9af0;
+    --on-accent: #0d1218;
 
     --zone-danger: rgba(232,112,95,.07);
     --zone-safe: rgba(79,189,132,.07);
@@ -298,8 +313,41 @@
   .brand-copy strong { display: block; font-size: 1rem; letter-spacing: .015em; }
   .brand-copy span { display: block; margin-top: 4px; font-size: .72rem; opacity: .78; letter-spacing: .08em; text-transform: uppercase; }
 
-  .nav-tabs {
+  .topbar-controls {
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .chart-key-button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 13px;
+    border-radius: 12px;
+    color: var(--on-header);
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.24);
+    font-size: .8rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color .12s ease;
+  }
+  .chart-key-button:hover { background: rgba(255,255,255,.24); }
+  .chart-key-mark {
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.95) 0 46%, transparent 46% 54%, rgba(255,255,255,.55) 54%),
+      linear-gradient(180deg, rgba(255,255,255,.95) 0 46%, transparent 46% 54%, rgba(255,255,255,.55) 54%);
+  }
+
+  .nav-tabs {
     display: inline-flex;
     padding: 4px;
     border-radius: 13px;
@@ -311,7 +359,7 @@
     border: 0;
     border-radius: 10px;
     background: transparent;
-    color: rgba(255,255,255,.78);
+    color: rgba(255,255,255,.92);
     padding: 0 16px;
     font-weight: 750;
     cursor: pointer;
@@ -331,7 +379,7 @@
     margin-bottom: 20px;
   }
   .eyebrow {
-    color: var(--brand);
+    color: var(--brand-ink);
     font-size: .75rem;
     font-weight: 850;
     letter-spacing: .13em;
@@ -422,7 +470,7 @@
     gap: 7px;
     border: 1px solid var(--line-strong);
     border-radius: 999px;
-    background: white;
+    background: var(--surface);
     padding: 0 11px;
     font-size: .78rem;
     font-weight: 820;
@@ -601,7 +649,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
-    background: white;
+    background: var(--surface);
   }
   .matchup-table {
     min-width: 1010px;
@@ -633,7 +681,7 @@
     flex-wrap: wrap;
     align-content: center;
     border-right: 1px solid var(--line-soft);
-    background: white;
+    background: var(--surface);
     transition: background-color .12s ease;
   }
   .matchup-cell:last-child { border-right: 0; }
@@ -820,11 +868,93 @@
     border: 0;
     border-radius: 20px;
     color: var(--ink);
-    background: white;
+    background: var(--surface);
     box-shadow: 0 30px 90px rgba(15, 23, 38, .28);
     overflow: hidden;
   }
+  dialog.wide { width: min(940px, calc(100vw - 28px)); }
   dialog::backdrop { background: var(--scrim); backdrop-filter: blur(3px); }
+
+  /*
+   * Reference type chart. 18 attacking rows against 18 defending columns, read as
+   * "row attacks column". Neutral cells are deliberately blank: 204 of the 324 cells are
+   * 1x, so drawing them all would bury the 80 that carry information.
+   */
+  .key-scroll {
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .key-grid {
+    display: grid;
+    grid-template-columns: 86px repeat(18, 30px);
+    min-width: max-content;
+    font-size: .64rem;
+    font-weight: 800;
+  }
+  .key-cell {
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-right: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .key-corner, .key-col-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    height: 30px;
+    color: var(--on-header);
+    background: var(--header);
+    border-color: rgba(255,255,255,.12);
+    letter-spacing: .04em;
+  }
+  .key-corner { left: 0; z-index: 5; font-size: .58rem; letter-spacing: .08em; }
+  .key-row-head {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    justify-content: start;
+    gap: 6px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: var(--ink);
+    font-weight: 880;
+  }
+  .key-row-head::before { content: ""; width: 7px; height: 15px; border-radius: 4px; background: var(--type-color); flex: 0 0 auto; }
+  .key-2 { color: var(--on-solid); background: var(--safe-solid); }
+  .key-h { color: var(--danger-ink); background: var(--danger-soft); }
+  .key-0 { color: var(--on-accent); background: var(--accent); }
+  .key-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 700;
+  }
+  .key-swatch {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 18px;
+    margin-right: 6px;
+    border-radius: 5px;
+    border: 1px solid var(--line-strong);
+    vertical-align: -4px;
+    font-size: .62rem;
+    font-weight: 800;
+  }
+  .key-swatch.key-1 { background: var(--surface); }
+  .key-swatch.key-2, .key-swatch.key-h, .key-swatch.key-0 { border-color: transparent; }
   .dialog-head {
     min-height: 64px;
     padding: 12px 14px 12px 18px;
@@ -970,7 +1100,16 @@
     text-transform: uppercase;
   }
   .exp-head .to-axis { text-align: right; }
-  .exp-head .to-net { text-align: right; }
+  .exp-head .to-net { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .exp-total {
+    font-size: .95rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    color: var(--on-header);
+  }
+  .exp-total.positive { color: var(--on-header-good); }
+  .exp-total.negative { color: var(--on-header-bad); }
   .exp-rows { padding: 4px 0; }
   .exp-row {
     display: grid;
@@ -1010,6 +1149,7 @@
     transition: transform .12s ease;
   }
   .exp-block:hover { transform: translateY(-1px); }
+  .exp-block.immune { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
   .exp-block.weak-2 { color: var(--danger-ink); background: var(--danger-soft); border-color: var(--danger-line); }
   .exp-block.weak-4 { color: var(--on-deep); background: var(--danger-deep); border-color: var(--danger-deep-line); }
   .exp-block.tier-resist { color: var(--on-solid); background: var(--safe-solid); border-color: var(--safe-ink); }
@@ -1018,12 +1158,62 @@
   .exp-block.move-fill { background: var(--move-bg); color: var(--move-fg); border-color: var(--move-bg); }
   .exp-block.ring-resist { outline: 2px solid var(--safe); outline-offset: -2px; }
   .exp-block.ring-weak { outline: 2px solid var(--danger-deep); outline-offset: -2px; }
+  /*
+   * Drawn rather than an emoji. 🚫 renders differently on every platform, ignores the
+   * theme tokens, and would be the only emoji in the app.
+   */
+  .exp-none {
+    width: 34px;
+    height: 26px;
+    flex: 0 0 34px;
+    display: inline-grid;
+    place-items: center;
+    vertical-align: middle;
+  }
+  .exp-none::before {
+    content: "";
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+    background:
+      linear-gradient(to bottom right, transparent calc(50% - 1px), var(--muted) calc(50% - 1px), var(--muted) calc(50% + 1px), transparent calc(50% + 1px));
+  }
+  /*
+   * In the legend the glyph sits inline next to its label, so it has to match the metrics
+   * of .swatch exactly. A block-level box here pushes the text out of line instead.
+   */
+  .exp-legend .exp-none {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+    margin-right: 6px;
+    vertical-align: -3px;
+  }
+  .exp-legend .exp-none::before {
+    width: 14px;
+    height: 14px;
+    border-width: 1.5px;
+  }
+
+  /*
+   * This is a <button>, so it needs an explicit background and border. Left unset it takes
+   * the browser's default button face, a light grey that ignores the page theme entirely
+   * and turns unreadable in dark mode.
+   */
   .exp-net {
     text-align: right;
     font-size: .76rem;
     font-weight: 900;
+    font-variant-numeric: tabular-nums;
     color: var(--muted);
+    background: transparent;
+    border: 0;
+    padding: 0 2px;
+    cursor: pointer;
+    border-radius: 6px;
   }
+  .exp-net:hover { background: var(--surface-hover); }
   .exp-net.positive { color: var(--safe-ink); }
   .exp-net.negative { color: var(--danger-ink); }
   .exp-legend {
@@ -1060,6 +1250,10 @@
     .brand-copy span { display: none; }
     .brand-copy strong { font-size: .88rem; }
     .nav-tab { min-height: 38px; padding: 0 11px; font-size: .78rem; }
+    .topbar-controls { gap: 7px; }
+    .chart-key-button { min-height: 38px; padding: 0 10px; }
+    .chart-key-button span:last-child { display: none; }
+    .key-grid { grid-template-columns: 74px repeat(18, 27px); }
     main { padding: 18px 12px 30px; }
     .view-header { margin-bottom: 16px; }
     .toolbar { align-items: stretch; }
@@ -1150,12 +1344,18 @@
           <span>VGC squad reference</span>
         </div>
       </div>
-      <nav class="nav-tabs" aria-label="Main views">
-        <button class="nav-tab active" data-view="setup">Team setup</button>
-        <button class="nav-tab" data-view="analytics">Matchup grid</button>
-        <button class="nav-tab" data-view="exposure">Exposure</button>
+      <div class="topbar-controls">
+        <button id="typeChartButton" class="chart-key-button" aria-haspopup="dialog">
+          <span class="chart-key-mark" aria-hidden="true"></span>
+          <span>Type chart</span>
+        </button>
+        <nav class="nav-tabs" aria-label="Main views">
+          <button class="nav-tab active" data-view="setup">Team setup</button>
+          <button class="nav-tab" data-view="analytics">Matchup grid</button>
+          <button class="nav-tab" data-view="exposure">Exposure</button>
         <button class="nav-tab" data-view="coffee">Buy Me a Coffee ☕</button>
-      </nav>
+        </nav>
+      </div>
     </div>
   </header>
 
@@ -1232,8 +1432,8 @@
         <div>
           <div class="eyebrow">Exposure and answers</div>
           <h1>How many of mine hit this type hard?</h1>
-          <p class="lede">Left of the axis is exposure, the slots that take 2× or more. Right is answers, the slots whose best entered move lands 2× or more. Every block is one Pokémon, so bar length is a straight count.</p>
-          <p class="caveat">Net is a raw count, so a 4× liability weighs the same as a 2× and an answer that folds in return still counts. Abilities are not modelled.</p>
+          <p class="lede">Left of the axis is defence, what this type does to you: red for the slots that take 2× or more, blue for the slots it cannot touch at all. Right is answers, the slots whose best entered move lands 2× or more. Every block is one Pokémon, so bar length is a straight count.</p>
+          <p class="caveat">Net is a raw count of answers plus immunities minus exposures, so a 4× liability weighs the same as a 2× and an answer that folds in return still counts in full. A slot that both walls a type and hits it hard counts once on each side. Abilities are not modelled.</p>
         </div>
         <button id="exposureEditButton" class="button">Edit team</button>
       </div>
@@ -1317,6 +1517,26 @@
     <button class="icon-button dialog-close" data-close-dialog="detailDialog" aria-label="Close">✕</button>
   </div>
   <div id="detailBody" class="dialog-body"></div>
+</dialog>
+
+<dialog id="typeChartDialog" class="wide" aria-labelledby="typeChartTitle">
+  <div class="dialog-head">
+    <div>
+      <strong id="typeChartTitle">Type chart</strong>
+      <span>Single types. Rows attack, columns defend.</span>
+    </div>
+    <button class="icon-button dialog-close" data-close-dialog="typeChartDialog" aria-label="Close">✕</button>
+  </div>
+  <div class="dialog-body">
+    <div id="typeChartScroll" class="key-scroll"><div id="typeChartGrid" class="key-grid"></div></div>
+    <div class="key-legend" aria-label="Type chart legend">
+      <span><span class="key-swatch key-2">2</span>Super effective</span>
+      <span><span class="key-swatch key-1"></span>Normal damage</span>
+      <span><span class="key-swatch key-h">½</span>Not very effective</span>
+      <span><span class="key-swatch key-0">0</span>No effect</span>
+    </div>
+    <p class="help-text">Dual types multiply the two columns together, which is where 4× and ¼× come from. Abilities are not modelled.</p>
+  </div>
 </dialog>
 
 <dialog id="diagnosticsDialog" aria-labelledby="diagnosticsTitle">
@@ -1648,18 +1868,26 @@
    * This counts type answers and exposures. It is not a damage or battle score.
    */
   /*
-   * INVARIANT: `answers` and `exposures` are the single aggregation. Every other field
-   * here is derived from them, never counted a second time. Two views of the same team
-   * that count independently will eventually disagree, and the disagreement is silent.
+   * INVARIANT: `answers`, `exposures` and `immunities` are the single aggregation. Every
+   * other field here is derived from them, never counted a second time. Two views of the
+   * same team that count independently will eventually disagree, and the disagreement is
+   * silent.
    *
-   * `net` is a RAW COUNT: answers minus exposures, unweighted. A slot that hits 2× but
-   * folds to 2× in return still counts as a full answer, and a 4× liability counts the
-   * same as a 2×. That is a deliberate simplification of an offensive question, not a
-   * damage model. Views that need severity read `defence` off the records.
+   * The defensive axis has two poles and both are counted. `exposures` is 2× and above,
+   * where the incoming type beats you. `immunities` is 0×, where it cannot touch you at
+   * all. Counting only the first draws half the axis, which is what this used to do.
+   *
+   * `net` is a RAW COUNT: answers plus immunities minus exposures, unweighted. A 4×
+   * liability counts the same as a 2×, and an answer that folds in return still counts in
+   * full. A slot that is both immune and a super-effective attacker counts twice, once per
+   * column, because the two columns measure opposite directions and a slot doing both is
+   * genuinely dominant. This is a count of type answers and exposures, not a damage model.
+   * Views that need severity read `defence` off the records.
    */
   function calculateTypeBalance(mons, targetType) {
     var answers = [];
     var exposures = [];
+    var immunities = [];
     for (var i = 0; i < mons.length; i++) {
       var item = mons[i];
       var offence = calculateBestOffence(item.mon, targetType);
@@ -1677,17 +1905,22 @@
       if (defence && defence.total >= 2) {
         exposures.push({ index: item.index, defence: defence.total });
       }
+      if (defence && defence.total === 0) {
+        immunities.push({ index: item.index, defence: 0 });
+      }
     }
     var attackers = answers.map(function (entry) { return entry.index; });
     var weaknesses = exposures.map(function (entry) { return entry.index; });
     return {
       answers: answers,
       exposures: exposures,
+      immunities: immunities,
       attackers: attackers,
       weaknesses: weaknesses,
       offensiveCount: answers.length,
       weaknessCount: exposures.length,
-      net: answers.length - exposures.length
+      immuneCount: immunities.length,
+      net: answers.length + immunities.length - exposures.length
     };
   }
 
@@ -1698,10 +1931,12 @@
         type: type,
         answers: balance.answers,
         exposures: balance.exposures,
+        immunities: balance.immunities,
         attackers: balance.attackers,
         weaknesses: balance.weaknesses,
         offensiveCount: balance.offensiveCount,
         weaknessCount: balance.weaknessCount,
+        immuneCount: balance.immuneCount,
         net: balance.net
       };
     });
@@ -2421,7 +2656,8 @@
           "Attacker indices drifted for " + type);
         assert(JSON.stringify(balance.weaknesses) === JSON.stringify(balance.exposures.map(function (e) { return e.index; })),
           "Weakness indices drifted for " + type);
-        assert(balance.net === balance.answers.length - balance.exposures.length,
+        assert(balance.immuneCount === balance.immunities.length, "Immune count drifted for " + type);
+        assert(balance.net === balance.answers.length + balance.immunities.length - balance.exposures.length,
           "Net is not a raw count for " + type);
         balance.answers.forEach(function (entry) {
           assert(entry.score >= 2, type + " answer below 2×: " + entry.score);
@@ -2443,7 +2679,52 @@
       assert(electric.answers[1].index === 5 && electric.answers[1].moveType === "Ground" &&
         electric.answers[1].score === 2 && electric.answers[1].tier === "neutral",
         "Ground coverage answer from a neutral slot changed");
-      assert(electric.net === 1, "Expected Electric net +1, found " + electric.net);
+      assert(electric.net === 2, "Expected Electric net +2, found " + electric.net);
+      assert(JSON.stringify(electric.immunities) === JSON.stringify([{ index: 1, defence: 0 }]),
+        "Water/Ground should be the only slot immune to Electric");
+    });
+
+    test("Both poles of the defensive axis", "Immunities are counted, and never overlap exposures", function () {
+      // One slot per immunity in the chart, so every 0x in the table has to be found.
+      var walls = [
+        { type: "Ghost",    blocks: ["Normal", "Fighting"] },
+        { type: "Ground",   blocks: ["Electric"] },
+        { type: "Flying",   blocks: ["Ground"] },
+        { type: "Steel",    blocks: ["Poison"] },
+        { type: "Dark",     blocks: ["Psychic"] },
+        { type: "Normal",   blocks: ["Ghost"] },
+        { type: "Fairy",    blocks: ["Dragon"] }
+      ];
+      var found = 0;
+      walls.forEach(function (wall, slot) {
+        var mons = [{ index: slot, mon: { type1: wall.type, type2: null, moves: [wall.type] } }];
+        wall.blocks.forEach(function (incoming) {
+          var balance = Engine.calculateTypeBalance(mons, incoming);
+          assert(balance.immunities.length === 1,
+            wall.type + " was not recorded as immune to " + incoming);
+          assert(balance.immunities[0].defence === 0,
+            wall.type + " immunity to " + incoming + " is not 0x");
+          assert(balance.exposures.length === 0,
+            wall.type + " is both immune and exposed to " + incoming);
+          found++;
+        });
+      });
+      assert(found === 8, "Expected all 8 chart immunities, found " + found);
+
+      // A slot can never sit in both arrays: 0 and >= 2 are disjoint by construction.
+      var squad = Engine.TYPES.map(function (t, i) {
+        return { index: i, mon: { type1: t, type2: null, moves: [t] } };
+      });
+      Engine.TYPES.forEach(function (type) {
+        var balance = Engine.calculateTypeBalance(squad, type);
+        var exposed = balance.exposures.map(function (e) { return e.index; });
+        balance.immunities.forEach(function (entry) {
+          assert(exposed.indexOf(entry.index) === -1,
+            "Slot " + entry.index + " counted as both immune and exposed to " + type);
+        });
+        assert(balance.immunities.every(function (e) { return e.defence === 0; }),
+          "Non-zero defence recorded as an immunity for " + type);
+      });
     });
 
     /* ---------- Design tokens ---------- */
@@ -2543,6 +2824,7 @@
     typePickerDialog: document.getElementById("typePickerDialog"), typePickerTitle: document.getElementById("typePickerTitle"), typePickerSubtitle: document.getElementById("typePickerSubtitle"), typePickerGrid: document.getElementById("typePickerGrid"), clearPickerValue: document.getElementById("clearPickerValue"),
     detailDialog: document.getElementById("detailDialog"), detailTitle: document.getElementById("detailTitle"), detailSubtitle: document.getElementById("detailSubtitle"), detailBody: document.getElementById("detailBody"),
     diagnosticsDialog: document.getElementById("diagnosticsDialog"), diagnosticsBody: document.getElementById("diagnosticsBody"), diagnosticsButton: document.getElementById("diagnosticsButton"), engineBadgeText: document.getElementById("engineBadgeText"),
+    typeChartDialog: document.getElementById("typeChartDialog"), typeChartGrid: document.getElementById("typeChartGrid"),
     teamCodeDialog: document.getElementById("teamCodeDialog"), teamCodeArea: document.getElementById("teamCodeArea"), quickPeek: document.getElementById("quickPeek"),
     toast: document.getElementById("toast"), toastMessage: document.getElementById("toastMessage"), toastAction: document.getElementById("toastAction"), undoButton: document.getElementById("undoButton")
   };
@@ -2703,6 +2985,20 @@
     if (state.chartSort !== "net") return rows;
     return rows.slice().sort((a, b) => a.net - b.net || TYPES.indexOf(a.type) - TYPES.indexOf(b.type));
   }
+  /*
+   * True when the team can land nothing at all on this type, not merely nothing
+   * super-effective. Every entered move is blanked by an immunity.
+   *
+   * Slots with no move types entered score null, which means unknown, not zero. They are
+   * excluded from the test entirely. Counting them as zero would mark a half-built team as
+   * having no answer, which is the opposite of true: it has no data yet.
+   */
+  function blankedOut(mons, targetType) {
+    const scored = mons
+      .map(item => calculateBestOffence(item.mon, targetType).score)
+      .filter(score => score !== null);
+    return scored.length > 0 && scored.every(score => score === 0);
+  }
   function exposureBlockHTML(entry, targetType) {
     const label = `P${entry.index + 1}`;
     const aria = `${label} answers ${targetType} with ${entry.moveType} for ${formatMultiplier(entry.score)}, and takes ${formatMultiplier(entry.defence)} from it`;
@@ -2725,7 +3021,9 @@
     return `<div class="exp-legend" aria-label="Exposure chart legend">
       <span><span class="swatch" style="background:var(--danger-deep);border-color:var(--danger-deep-line)"></span>4× weak</span>
       <span><span class="swatch" style="background:var(--danger-soft);border-color:var(--danger-line)"></span>2× weak</span>
+      <span><span class="swatch" style="background:var(--accent);border-color:var(--accent)"></span>Immune</span>
       ${tierItems}
+      <span><span class="exp-none"></span>Nothing can damage it</span>
     </div>`;
   }
   function renderExposure() {
@@ -2742,29 +3040,47 @@
       return;
     }
     const rows = exposureRows(mons).map(row => {
-      const exposed = row.exposures.map(entry => {
-        const aria = `P${entry.index + 1} takes ${formatMultiplier(entry.defence)} from ${row.type}`;
-        return `<button class="exp-block ${entry.defence === 4 ? "weak-4" : "weak-2"}" data-action="show-detail" data-mon="${entry.index}" data-target="${row.type}" data-quick="${escapeAttribute(aria)}" aria-label="${escapeAttribute(aria)}">P${entry.index + 1}</button>`;
-      }).join("");
-      const answers = row.answers.map(entry => exposureBlockHTML(entry, row.type)).join("");
+      // Both poles of the defensive axis share this column, ordered by slot number so the
+      // eye can track a Pokémon down the chart rather than hunting for it.
+      const defensive = row.exposures.concat(row.immunities)
+        .sort((a, b) => a.index - b.index)
+        .map(entry => {
+          const immune = entry.defence === 0;
+          const cls = immune ? "immune" : entry.defence === 4 ? "weak-4" : "weak-2";
+          const aria = immune
+            ? `P${entry.index + 1} is immune to ${row.type}`
+            : `P${entry.index + 1} takes ${formatMultiplier(entry.defence)} from ${row.type}`;
+          return `<button class="exp-block ${cls}" data-action="show-detail" data-mon="${entry.index}" data-target="${row.type}" data-quick="${escapeAttribute(aria)}" aria-label="${escapeAttribute(aria)}">P${entry.index + 1}</button>`;
+        }).join("");
+      const answers = row.answers.length
+        ? row.answers.map(entry => exposureBlockHTML(entry, row.type)).join("")
+        : blankedOut(mons, row.type)
+          ? `<span class="exp-none" role="img" aria-label="${escapeAttribute(`No move on this team can damage ${row.type}`)}" title="No move on this team can damage ${row.type}"></span>`
+          : "";
       const netClass = row.net > 0 ? "positive" : row.net < 0 ? "negative" : "";
+      const netAria = `${row.type} net ${formatSigned(row.net)}. ${row.offensiveCount} answers plus ${row.immuneCount} immune minus ${row.weaknessCount} exposed.`;
       return `<div class="exp-row" role="row" data-row-type="${row.type}">
         <span class="exp-chip" style="--type-color:${TYPE_COLORS[row.type]}" role="rowheader">${row.type}</span>
-        <div class="exp-left" role="cell">${exposed}</div>
+        <div class="exp-left" role="cell">${defensive}</div>
         <div class="exp-axis" aria-hidden="true"></div>
         <div class="exp-right" role="cell">${answers}</div>
-        <button class="exp-net ${netClass}" data-action="show-net-detail" data-target="${row.type}" aria-label="${row.type} net ${formatSigned(row.net)}. ${row.offensiveCount} answers minus ${row.weaknessCount} exposed.">${formatSigned(row.net)}</button>
+        <button class="exp-net ${netClass}" data-action="show-net-detail" data-target="${row.type}" aria-label="${escapeAttribute(netAria)}">${formatSigned(row.net)}</button>
       </div>`;
     }).join("");
+    // Every row's net, added up. A single number for the whole squad rather than 18.
+    const allRows = TYPES.map(type => calculateTypeBalance(mons, type));
+    const total = allRows.reduce((sum, row) => sum + row.net, 0);
+    const totalClass = total > 0 ? "positive" : total < 0 ? "negative" : "";
+    const totalTitle = `Every row's net added together across all 18 types: ${allRows.reduce((s, r) => s + r.offensiveCount, 0)} answers plus ${allRows.reduce((s, r) => s + r.immuneCount, 0)} immunities minus ${allRows.reduce((s, r) => s + r.weaknessCount, 0)} exposures.`;
     els.exposureContent.innerHTML = `
       ${summaryHTML(calculateTeamSummary(mons), mons.length)}
       <section class="exp-panel" aria-label="Exposure and answers by incoming type">
         <div class="exp-head" role="row">
           <span>Incoming</span>
-          <span class="to-axis">Exposed</span>
+          <span class="to-axis">Defence</span>
           <span></span>
           <span>Answers</span>
-          <span class="to-net">Net</span>
+          <span class="to-net">Net<strong class="exp-total ${totalClass}" title="${escapeAttribute(totalTitle)}">${formatSigned(total)}</strong></span>
         </div>
         <div class="exp-rows" role="table">${rows}</div>
         ${exposureLegendHTML()}
@@ -2896,15 +3212,19 @@
     const weaknesses = balance.weaknesses.length ? balance.weaknesses.map(index => `P${index + 1}`).join(", ") : "None";
     els.detailTitle.textContent = `${targetType} matchup net`;
     els.detailSubtitle.textContent = `${state.analysisMode === "selection" ? "Selection" : "Full squad"} · ${mons.length} active`;
+    const immune = balance.immunities.length ? balance.immunities.map(entry => `P${entry.index + 1}`).join(", ") : "None";
+    const dead = blankedOut(mons, targetType);
     els.detailBody.innerHTML = `
       <div class="detail-summary">
         <span class="detail-chip">SE attackers: ${balance.offensiveCount}</span>
+        <span class="detail-chip">Immune: ${balance.immuneCount}</span>
         <span class="detail-chip">Weak Pokémon: ${balance.weaknessCount}</span>
         <span class="detail-chip">Net: ${formatSigned(balance.net)}</span>
       </div>
-      <section class="detail-section"><h3>Who hits ${targetType} super effectively</h3><div class="equation">${attackers}</div></section>
+      <section class="detail-section"><h3>Who hits ${targetType} super effectively</h3><div class="equation">${attackers}${dead ? `<br>No entered move on this team can damage ${targetType} at all.` : ""}</div></section>
+      <section class="detail-section"><h3>Who ${targetType} cannot touch</h3><div class="equation">${immune}</div></section>
       <section class="detail-section"><h3>Who is weak to ${targetType}</h3><div class="equation">${weaknesses}</div></section>
-      <section class="detail-section"><h3>What the tally means</h3><div class="equation">${balance.offensiveCount} super-effective attackers − ${balance.weaknessCount} weaknesses = <strong>${formatSigned(balance.net)}</strong>.<br>This is a count of type answers and exposures, not a damage or overall battle score.</div></section>`;
+      <section class="detail-section"><h3>What the tally means</h3><div class="equation">${balance.offensiveCount} super-effective attackers + ${balance.immuneCount} immune − ${balance.weaknessCount} weaknesses = <strong>${formatSigned(balance.net)}</strong>.<br>A slot that is immune and also hits back counts once on each side.<br>This is a count of type answers and exposures, not a damage or overall battle score.</div></section>`;
     els.detailDialog.showModal();
   }
 
@@ -2968,6 +3288,83 @@
       assert(JSON.stringify(round.mons) === JSON.stringify(demo.mons), "Demo squad does not survive a re-encode");
     });
 
+    test("Immunity reaches the chart", "Immune slots are counted on the defence side and lift the net", () => {
+      // Ground/Flying is immune to Electric and answers it with STAB Ground, so it lands on
+      // both sides of the axis and should be counted once on each.
+      const wall = [{index:0, mon:{type1:"Ground", type2:"Flying", moves:["Ground", null, null, null]}}];
+      const electric = calculateTypeBalance(wall, "Electric");
+      assert(electric.immunities.length === 1, `Expected one immune slot, found ${electric.immunities.length}`);
+      assert(electric.immunities[0].defence === 0, "Immunity was not recorded at 0×");
+      assert(electric.exposures.length === 0, "A 0× slot was also counted as exposed");
+      assert(electric.answers.length === 1, "STAB Ground should still answer Electric");
+      assert(electric.net === 2, `Immune and answering should net +2, found ${electric.net}`);
+
+      // A wall with nothing to hit back with still counts, which is the whole point.
+      const steel = [{index:0, mon:{type1:"Steel", type2:null, moves:["Steel", null, null, null]}}];
+      const poison = calculateTypeBalance(steel, "Poison");
+      assert(poison.immunities.length === 1, "Steel was not recorded as immune to Poison");
+      assert(poison.answers.length === 0, "Steel should have no super-effective answer to Poison");
+      assert(poison.net === 1, `A pure wall should net +1, found ${poison.net}`);
+    });
+
+    test("Blanked-out rows", "The no-answer marker separates zero damage from no data", () => {
+      // Every entered move blanked by an immunity: a genuine dead end.
+      const normals = [
+        {index:0, mon:{type1:"Normal", type2:null, moves:["Normal", null, null, null]}},
+        {index:1, mon:{type1:"Normal", type2:null, moves:["Fighting", null, null, null]}}
+      ];
+      assert(blankedOut(normals, "Ghost"), "All-blanked moves did not register as no answer");
+
+      // INVARIANT: no moves entered scores null, which is unknown, not zero. A team with
+      // nothing entered must never be reported as unable to damage anything.
+      const empty = [{index:0, mon:{type1:"Normal", type2:null, moves:[null, null, null, null]}}];
+      assert(calculateBestOffence(empty[0].mon, "Ghost").score === null, "Empty moveset did not score null");
+      assert(!blankedOut(empty, "Ghost"), "A team with no moves entered was reported as having no answer");
+
+      // One live move is enough to clear it.
+      const mixed = normals.concat([{index:2, mon:{type1:"Dark", type2:null, moves:["Dark", null, null, null]}}]);
+      assert(!blankedOut(mixed, "Ghost"), "A team with one damaging move still reported no answer");
+
+      // A slot with nothing entered must not rescue a team that is otherwise dead.
+      const deadPlusEmpty = normals.concat(empty.map(item => ({index:9, mon:item.mon})));
+      assert(blankedOut(deadPlusEmpty, "Ghost"), "An unconfigured slot masked a genuine dead end");
+    });
+
+    test("Type chart renders the engine", "All 324 reference cells match effectiveness(), and the totals add up", () => {
+      buildTypeChart();
+      const cells = els.typeChartGrid.querySelectorAll(".key-cell[data-atk]");
+      assert(cells.length === 324, `Expected 324 cells, rendered ${cells.length}`);
+      const seen = new Set();
+      const rendered = {0:0, 0.5:0, 1:0, 2:0};
+      const expected = {0:0, 0.5:0, 1:0, 2:0};
+      for (const attack of TYPES) for (const defend of TYPES) expected[effectiveness(attack, defend)]++;
+      cells.forEach(cell => {
+        const attack = cell.dataset.atk;
+        const defend = cell.dataset.def;
+        const shown = Number(cell.dataset.value);
+        const truth = effectiveness(attack, defend);
+        assert(shown === truth, `${attack} → ${defend} rendered ${shown}, engine says ${truth}`);
+        const key = `${attack}>${defend}`;
+        assert(!seen.has(key), `Duplicate cell for ${key}`);
+        seen.add(key);
+        rendered[shown]++;
+      });
+      assert(seen.size === 324, `Expected 324 unique pairs, found ${seen.size}`);
+      assert(rendered[0] === 8, `Expected 8 immunities in the chart, found ${rendered[0]}`);
+      // Counted off the engine rather than hardcoded, so the totals cannot go stale.
+      for (const value of [0, .5, 1, 2]) {
+        assert(rendered[value] === expected[value],
+          `Rendered ${rendered[value]} cells at ${value}×, engine has ${expected[value]}`);
+      }
+      // The label carries the value too, so colour is never the only encoding.
+      cells.forEach(cell => {
+        const value = Number(cell.dataset.value);
+        const text = cell.textContent.trim();
+        if (value === 1) assert(text === "", `Neutral cell should be blank, found "${text}"`);
+        else assert(text.length > 0, `Non-neutral cell ${cell.dataset.atk} → ${cell.dataset.def} has no label`);
+      });
+    });
+
     return {ok:tests.every(item => item.ok), tests, assertions};
   }
   function updateDiagnosticsBadge() {
@@ -2977,6 +3374,32 @@
     document.documentElement.dataset.engineStatus = diagnostics.ok ? "passed" : "failed";
     document.documentElement.dataset.assertions = String(diagnostics.assertions);
   }
+  /*
+   * Static reference chart, built once. It reads TYPE_CHART directly rather than
+   * recomputing anything, so it cannot disagree with the analysis views.
+   */
+  function typeChartCellHTML(attackType, defendType) {
+    const value = effectiveness(attackType, defendType);
+    const cls = value === 2 ? "key-2" : value === .5 ? "key-h" : value === 0 ? "key-0" : "key-1";
+    const text = value === 2 ? "2" : value === .5 ? "½" : value === 0 ? "0" : "";
+    const aria = `${attackType} attacking ${defendType}: ${formatMultiplier(value)}`;
+    return `<div class="key-cell ${cls}" role="cell" data-atk="${attackType}" data-def="${defendType}" data-value="${value}" title="${escapeAttribute(aria)}" aria-label="${escapeAttribute(aria)}">${text}</div>`;
+  }
+  function buildTypeChart() {
+    if (els.typeChartGrid.childElementCount) return;
+    const head = `<div class="key-cell key-corner" role="columnheader">ATK ↓ DEF →</div>` +
+      TYPES.map(type => `<div class="key-cell key-col-head" role="columnheader" title="${type}" aria-label="Defending ${type}">${TYPE_ABBR[type]}</div>`).join("");
+    const body = TYPES.map(attackType =>
+      `<div class="key-cell key-row-head" role="rowheader" style="--type-color:${TYPE_COLORS[attackType]}">${attackType}</div>` +
+      TYPES.map(defendType => typeChartCellHTML(attackType, defendType)).join("")
+    ).join("");
+    els.typeChartGrid.innerHTML = head + body;
+  }
+  function showTypeChart() {
+    buildTypeChart();
+    els.typeChartDialog.showModal();
+  }
+
   function showDiagnostics() {
     els.diagnosticsBody.innerHTML = `<div class="detail-summary"><span class="detail-chip">${diagnostics.ok ? "✓ All checks passed" : "! Validation failed"}</span><span class="detail-chip">${diagnostics.assertions.toLocaleString()} assertions</span></div><div class="diagnostic-list">${diagnostics.tests.map(test => `<div class="diagnostic-item ${test.ok ? "" : "failed"}"><span class="diagnostic-icon">${test.ok ? "✓" : "✕"}</span><div><strong>${test.name}</strong><span>${test.detail}</span></div></div>`).join("")}</div>`;
     els.diagnosticsDialog.showModal();
@@ -3190,6 +3613,7 @@
   document.getElementById("jumpNeutralButton").addEventListener("click", jumpToNeutral);
   els.clearSelectionButton.addEventListener("click", clearSelection);
   els.diagnosticsButton.addEventListener("click", showDiagnostics);
+  document.getElementById("typeChartButton").addEventListener("click", showTypeChart);
   document.getElementById("teamCodeButton").addEventListener("click", showTeamCode);
   document.getElementById("copyTeamCodeButton").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(els.teamCodeArea.value); showToast("Team code copied"); }
