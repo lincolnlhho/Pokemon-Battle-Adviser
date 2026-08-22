@@ -490,8 +490,10 @@
     font-size: 1.1rem;
     cursor: pointer;
   }
-  .icon-button:hover { color: var(--brand); background: var(--surface-inset); }
-  .mon-card-head > .icon-button { margin-left: auto; }
+  .icon-button:hover:not(:disabled) { color: var(--brand); background: var(--surface-inset); }
+  .icon-button:disabled { opacity: .32; cursor: not-allowed; }
+  .mon-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+  .move-button { width: 30px; font-size: .78rem; }
   .mon-card-body { padding: 15px; }
   .field-label {
     display: flex;
@@ -915,19 +917,27 @@
     letter-spacing: .04em;
   }
   .key-corner { left: 0; z-index: 5; font-size: .58rem; letter-spacing: .08em; }
+  /*
+   * The row label carries the type colour itself rather than a swatch beside ink text.
+   * In a reference chart the type is the content, so it earns the full fill. Foreground
+   * comes from the engine's contrastText, and every one of the 18 is checked in the
+   * diagnostics against WCAG AA.
+   */
   .key-row-head {
     position: sticky;
     left: 0;
     z-index: 2;
     justify-content: start;
-    gap: 6px;
     display: flex;
     align-items: center;
-    padding: 0 8px;
-    color: var(--ink);
+    padding: 0 9px;
+    color: var(--type-ink);
+    background: var(--type-color);
+    border-right-color: rgba(0,0,0,.16);
     font-weight: 880;
+    letter-spacing: .01em;
   }
-  .key-row-head::before { content: ""; width: 7px; height: 15px; border-radius: 4px; background: var(--type-color); flex: 0 0 auto; }
+  .key-col-head { border-bottom: 3px solid var(--type-color); }
   .key-2 { color: var(--on-solid); background: var(--safe-solid); }
   .key-h { color: var(--danger-ink); background: var(--danger-soft); }
   .key-0 { color: var(--on-accent); background: var(--accent); }
@@ -2024,6 +2034,31 @@
     return clean;
   }
 
+  /*
+   * Swap two slots. Returns a NEW array; the input is never touched.
+   *
+   * Slot position is identity in every view built on this engine, so a swap renumbers the
+   * labels rather than moving data between Pokémon. Everything the slot carries, typing,
+   * moves and the bring flag, travels with it.
+   *
+   * INVARIANT: bad indices throw. Silently ignoring one would leave the caller believing a
+   * reorder happened, and a caller that then rebuilt state from the result would drop a
+   * Pokémon without a word.
+   */
+  function swapSlots(mons, a, b) {
+    if (!Array.isArray(mons)) throw new Error("swapSlots needs an array of slots");
+    [a, b].forEach(function (index) {
+      if (typeof index !== "number" || !Number.isInteger(index) || index < 0 || index >= mons.length) {
+        throw new Error("Slot index out of range: " + index);
+      }
+    });
+    var copy = mons.slice();
+    var held = copy[a];
+    copy[a] = copy[b];
+    copy[b] = held;
+    return copy;
+  }
+
   /* ===================================================================
    * TEAM CODE
    * Base64url, no server, no network. Moves a squad between devices.
@@ -2099,6 +2134,7 @@
     defaultState: defaultState,
     sanitiseMon: sanitiseMon,
     sanitiseState: sanitiseState,
+    swapSlots: swapSlots,
     encodeTeamCode: encodeTeamCode,
     decodeTeamCode: decodeTeamCode
   };
@@ -2220,8 +2256,17 @@
    * COLOUR HELPERS
    * =================================================================== */
 
+  /*
+   * INVARIANT: this rejects anything that is not a six-digit hex rather than returning NaN
+   * channels. A NaN here used to travel all the way to the page as "#NaNNaNNaN", which CSS
+   * silently discards, leaving an element with no background and unreadable text. Failing
+   * loudly at the source turns that into a caught error instead of an invisible defect.
+   */
   function hexToRgb(hex) {
     var value = String(hex).replace("#", "");
+    if (!/^[0-9a-fA-F]{6}$/.test(value)) {
+      throw new Error("Not a six-digit hex colour: " + hex);
+    }
     return {
       r: parseInt(value.slice(0, 2), 16),
       g: parseInt(value.slice(2, 4), 16),
@@ -2241,11 +2286,39 @@
     }).join("");
   }
 
-  /* Readable text colour for a given background. */
-  function contrastText(hex) {
+  var INK_DARK = "#172033";
+  var INK_LIGHT = "#ffffff";
+
+  /*
+   * WCAG relative luminance. The sRGB channels have to be linearised first; averaging the
+   * raw bytes is not the same curve and misjudges saturated mid-tones badly. Fire (#EE8130)
+   * read as dark under the naive version and got white text at 2.7:1.
+   */
+  function relativeLuminance(hex) {
     var c = hexToRgb(hex);
-    var luminance = (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255;
-    return luminance > .58 ? "#172033" : "#ffffff";
+    function channel(value) {
+      var v = value / 255;
+      return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4);
+    }
+    return .2126 * channel(c.r) + .7152 * channel(c.g) + .0722 * channel(c.b);
+  }
+
+  /* Contrast ratio between two hex colours, per WCAG 2.1. */
+  function contrastRatio(hexA, hexB) {
+    var a = relativeLuminance(hexA);
+    var b = relativeLuminance(hexB);
+    return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+  }
+
+  /*
+   * Readable text colour for a given background.
+   *
+   * INVARIANT: this returns whichever candidate actually measures better, rather than
+   * switching on a luminance threshold. A threshold has to guess where the crossover sits
+   * and gets saturated mid-tones wrong; measuring both cannot.
+   */
+  function contrastText(hex) {
+    return contrastRatio(INK_DARK, hex) >= contrastRatio(INK_LIGHT, hex) ? INK_DARK : INK_LIGHT;
   }
 
   /* Emit a theme block as CSS custom property declarations. */
@@ -2264,6 +2337,8 @@
     THEME: THEME,
     hexToRgb: hexToRgb,
     mixHex: mixHex,
+    relativeLuminance: relativeLuminance,
+    contrastRatio: contrastRatio,
     contrastText: contrastText,
     themeCSS: themeCSS
   };
@@ -2584,6 +2659,43 @@
       assert(Engine.sanitiseState("garbage").mons.length === 6, "Garbage input did not fall back to a clean state");
     });
 
+    test("Slot reordering", "A swap moves two slots, leaves the rest alone, and never mutates the input", function () {
+      var squad = Engine.defaultState().mons;
+      squad[0] = Engine.sanitiseMon({ type1: "Fire", type2: "Flying", moves: ["Fire", "Grass"], bring: true });
+      squad[3] = Engine.sanitiseMon({ type1: "Water", type2: null, moves: ["Water"], bring: false });
+      var before = JSON.stringify(squad);
+
+      var moved = Engine.swapSlots(squad, 0, 3);
+      assert(JSON.stringify(squad) === before, "swapSlots mutated the array it was given");
+      assert(moved !== squad, "swapSlots returned the same array reference");
+      assert(moved.length === squad.length, "Slot count changed during a swap");
+
+      // The two ends trade places whole, bring flag included.
+      assert(JSON.stringify(moved[0]) === JSON.stringify(squad[3]), "Slot 0 did not receive slot 3");
+      assert(JSON.stringify(moved[3]) === JSON.stringify(squad[0]), "Slot 3 did not receive slot 0");
+      assert(moved[3].bring === true, "The bring flag did not travel with the Pokémon");
+      assert(JSON.stringify(moved[3].moves) === JSON.stringify(["Fire", "Grass", null, null]),
+        "Move types did not travel with the Pokémon");
+
+      // Everything else is untouched.
+      [1, 2, 4, 5].forEach(function (i) {
+        assert(JSON.stringify(moved[i]) === JSON.stringify(squad[i]), "Slot " + i + " changed during an unrelated swap");
+      });
+
+      // Swapping the same pair again is the identity.
+      assert(JSON.stringify(Engine.swapSlots(moved, 0, 3)) === before, "A swap is not its own inverse");
+      assert(JSON.stringify(Engine.swapSlots(squad, 2, 2)) === before, "Swapping a slot with itself changed the squad");
+
+      [-1, 6, 1.5, "0", null, undefined, NaN].forEach(function (bad) {
+        var threw = false;
+        try { Engine.swapSlots(squad, 0, bad); } catch (error) { threw = true; }
+        assert(threw, "swapSlots accepted index " + JSON.stringify(bad) + " instead of throwing");
+      });
+      var threwOnArray = false;
+      try { Engine.swapSlots(null, 0, 1); } catch (error) { threwOnArray = true; }
+      assert(threwOnArray, "swapSlots accepted a non-array");
+    });
+
     test("Team code round trip", "Encode then decode reproduces the squad exactly", function () {
       var original = Engine.sanitiseState({
         mons: [
@@ -2746,6 +2858,40 @@
 
       assert(Tokens.mixHex("#000000", "#ffffff", 0) === "#000000", "mixHex at 0 did not return the first colour");
       assert(Tokens.mixHex("#000000", "#ffffff", 1) === "#ffffff", "mixHex at 1 did not return the second colour");
+
+      // Garbage in must throw, not produce "#NaNNaNNaN". CSS drops an invalid colour
+      // silently, so a bad blend becomes an element with no background and no warning.
+      ["var(--surface)", "#fff", "", "rgb(0,0,0)", null, undefined, "#12345g"].forEach(function (bad) {
+        var threw = false;
+        try { Tokens.hexToRgb(bad); } catch (error) { threw = true; }
+        assert(threw, "hexToRgb accepted " + JSON.stringify(bad) + " instead of throwing");
+      });
+      TYPES.forEach(function (type) {
+        var tint = Tokens.mixHex(Tokens.TYPE_COLORS[type], "#ffffff", .68);
+        assert(/^#[0-9a-f]{6}$/.test(tint), type + " tint is not a valid hex: " + tint);
+      });
+    });
+
+    test("Text on a type colour clears AA", "Every swatch label measures 4.5:1 or better against its own fill", function () {
+      // Known WCAG anchors, so a broken luminance curve fails here rather than downstream.
+      assert(Math.abs(Tokens.contrastRatio("#ffffff", "#000000") - 21) < .01, "White on black is not 21:1");
+      assert(Math.abs(Tokens.contrastRatio("#ffffff", "#ffffff") - 1) < .01, "White on white is not 1:1");
+      assert(Math.abs(Tokens.relativeLuminance("#ffffff") - 1) < .001, "White luminance is not 1");
+      assert(Math.abs(Tokens.relativeLuminance("#000000")) < .001, "Black luminance is not 0");
+      // sRGB is a gamma curve, not a straight average. Mid grey lands near .216, not .5.
+      assert(Math.abs(Tokens.relativeLuminance("#808080") - .2159) < .002,
+        "Mid grey luminance is " + Tokens.relativeLuminance("#808080") + ", expected the sRGB curve");
+
+      TYPES.forEach(function (type) {
+        var fill = Tokens.TYPE_COLORS[type];
+        var ink = Tokens.contrastText(fill);
+        var ratio = Tokens.contrastRatio(ink, fill);
+        assert(ratio >= 4.5, type + " label is " + Math.round(ratio * 100) / 100 + ":1 on its own fill, below AA");
+        // The pick has to be the better of the two, not merely adequate.
+        var other = ink === "#ffffff" ? "#172033" : "#ffffff";
+        assert(ratio >= Tokens.contrastRatio(other, fill),
+          type + " chose the worse of the two ink colours");
+      });
     });
 
     test("Theme parity", "Light and dark define exactly the same token names", function () {
@@ -2894,7 +3040,18 @@
           <div class="mon-card-head">
             <div class="mon-index">P${index + 1}</div>
             <div class="mon-title"><strong>Team slot ${index + 1}</strong><span>${status}</span></div>
-            <button class="icon-button" data-action="clear-mon" data-mon="${index}" aria-label="Clear P${index + 1}" ${!mon.type1 && !mon.moves.some(Boolean) ? "disabled" : ""}>⌫</button>
+            <div class="mon-actions">
+              ${[-1, 1].map(delta => {
+                const target = index + delta;
+                const label = `Move P${index + 1} to slot ${target + 1}`;
+                const off = target < 0 || target > 5;
+                // The grid is two columns on desktop, so the arrow alone reads as a
+                // direction on screen rather than a position in the order. The label
+                // carries the actual destination.
+                return `<button class="icon-button move-button" data-action="move-mon" data-mon="${index}" data-delta="${delta}" aria-label="${label}" title="${label}" ${off ? "disabled" : ""}>${delta < 0 ? "▲" : "▼"}</button>`;
+              }).join("")}
+              <button class="icon-button" data-action="clear-mon" data-mon="${index}" aria-label="Clear P${index + 1}" ${!mon.type1 && !mon.moves.some(Boolean) ? "disabled" : ""}>⌫</button>
+            </div>
           </div>
           <div class="mon-card-body">
             <div class="field-label">Pokémon typing <span>Type 2 is optional</span></div>
@@ -3112,7 +3269,7 @@
     let label = `P${index + 1}`;
     if (showMove) {
       const baseColor = TYPE_COLORS[best.moveType];
-      const bg = offence.score >= 2 ? baseColor : mixHex(baseColor, "var(--surface)", .68);
+      const bg = offence.score >= 2 ? baseColor : mixHex(baseColor, "#ffffff", .68);
       const fg = contrastText(bg);
       const border = mixHex(baseColor, "#000000", .12);
       style = `--move-bg:${bg};--move-fg:${fg};--move-border:${border}`;
@@ -3132,7 +3289,7 @@
     const strongSwatch = state.displayMode === "moves"
       ? `<span class="legend-swatch" style="background:${TYPE_COLORS.Grass};border-color:${mixHex(TYPE_COLORS.Grass,"#000000",.12)}"></span>`
       : `<span class="legend-swatch strong"></span>`;
-    const goodTint = mixHex(TYPE_COLORS.Grass, "var(--surface)", .68);
+    const goodTint = mixHex(TYPE_COLORS.Grass, "#ffffff", .68);
     const goodSwatch = state.displayMode === "moves"
       ? `<span class="legend-swatch" style="background:${goodTint};border-color:${mixHex(TYPE_COLORS.Grass,"#000000",.12)}"></span>`
       : `<span class="legend-swatch good"></span>`;
@@ -3363,6 +3520,68 @@
         if (value === 1) assert(text === "", `Neutral cell should be blank, found "${text}"`);
         else assert(text.length > 0, `Non-neutral cell ${cell.dataset.atk} → ${cell.dataset.def} has no label`);
       });
+
+      // Row labels sit on their own type colour, so each of the 18 has to clear AA on its
+      // own. contrastText picks the foreground; this proves the pick is actually readable.
+      const channel = value => {
+        const c = value / 255;
+        return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
+      };
+      const luminance = hex => {
+        const n = parseInt(hex.slice(1), 16);
+        return .2126 * channel((n >> 16) & 255) + .7152 * channel((n >> 8) & 255) + .0722 * channel(n & 255);
+      };
+      const contrast = (a, b) => {
+        const high = Math.max(luminance(a), luminance(b));
+        const low = Math.min(luminance(a), luminance(b));
+        return (high + .05) / (low + .05);
+      };
+      for (const type of TYPES) {
+        const fill = TYPE_COLORS[type];
+        const ink = contrastText(fill);
+        const ratio = contrast(ink, fill);
+        assert(ratio >= 4.5, `${type} label is ${Math.round(ratio * 100) / 100}:1 on its own colour, below AA`);
+      }
+    });
+
+    test("Reordering renumbers, it does not move data", "Typing, moves and selection all travel with the slot", () => {
+      const before = state.mons;
+      try {
+        state.mons = sanitiseState({mons:[
+          {type1:"Fire", type2:"Flying", moves:["Fire","Grass"], bring:true},
+          {type1:"Water", type2:null, moves:["Water"], bring:false},
+          {type1:"Grass", type2:null, moves:["Grass"], bring:true}
+        ]}).mons;
+
+        const first = configuredMons();
+        assert(first.length === 3, `Expected three configured slots, found ${first.length}`);
+        assert(first[0].mon.type1 === "Fire" && first[0].index === 0, "Fixture did not load in order");
+
+        state.mons = Engine.swapSlots(state.mons, 0, 1);
+        const after = configuredMons();
+        // The Fire slot is now reported as P2, which is the whole point of the feature.
+        assert(after[1].mon.type1 === "Fire", "Fire did not land in slot 2");
+        assert(after[1].index === 1, `Fire reports index ${after[1].index}, expected 1`);
+        assert(after[0].mon.type1 === "Water", "Water did not land in slot 1");
+        assert(after[1].mon.bring === true, "The bring flag did not travel with Fire");
+        assert(after[0].mon.bring === false, "Water picked up a selection it never had");
+        assert(selectedMons().length === 2, `Selection count changed on reorder: ${selectedMons().length}`);
+        assert(JSON.stringify(after[1].mon.moves) === JSON.stringify(["Fire","Grass",null,null]),
+          "Move types did not travel with Fire");
+
+        // Analysis must be order-independent. Same squad, same numbers.
+        const beforeNet = TYPES.map(type => calculateTypeBalance(configuredMons(), type).net).join(",");
+        state.mons = Engine.swapSlots(state.mons, 0, 2);
+        const afterNet = TYPES.map(type => calculateTypeBalance(configuredMons(), type).net).join(",");
+        assert(beforeNet === afterNet, "Reordering changed the analysis, which it must never do");
+
+        // A code written after a reorder has to carry the new order.
+        const code = Engine.encodeTeamCode({mons:state.mons});
+        const round = Engine.decodeTeamCode(code);
+        assert(JSON.stringify(round.mons) === JSON.stringify(state.mons), "Team code lost the reordered squad");
+      } finally {
+        state.mons = before;
+      }
     });
 
     return {ok:tests.every(item => item.ok), tests, assertions};
@@ -3388,9 +3607,9 @@
   function buildTypeChart() {
     if (els.typeChartGrid.childElementCount) return;
     const head = `<div class="key-cell key-corner" role="columnheader">ATK ↓ DEF →</div>` +
-      TYPES.map(type => `<div class="key-cell key-col-head" role="columnheader" title="${type}" aria-label="Defending ${type}">${TYPE_ABBR[type]}</div>`).join("");
+      TYPES.map(type => `<div class="key-cell key-col-head" role="columnheader" style="--type-color:${TYPE_COLORS[type]}" title="${type}" aria-label="Defending ${type}">${TYPE_ABBR[type]}</div>`).join("");
     const body = TYPES.map(attackType =>
-      `<div class="key-cell key-row-head" role="rowheader" style="--type-color:${TYPE_COLORS[attackType]}">${attackType}</div>` +
+      `<div class="key-cell key-row-head" role="rowheader" style="--type-color:${TYPE_COLORS[attackType]};--type-ink:${contrastText(TYPE_COLORS[attackType])}">${attackType}</div>` +
       TYPES.map(defendType => typeChartCellHTML(attackType, defendType)).join("")
     ).join("");
     els.typeChartGrid.innerHTML = head + body;
@@ -3455,6 +3674,25 @@
     state.mons[index] = emptyMon();
     renderAll();
     showToast(`P${index + 1} cleared`, "Undo", undoClear);
+  }
+  /*
+   * Swap a slot with its neighbour. No toast: the card visibly moves, and repeated taps
+   * would spam one. The header Undo button appears on its own once a snapshot exists.
+   */
+  function moveMon(index, delta) {
+    const target = index + delta;
+    if (target < 0 || target >= state.mons.length) return;
+    snapshotForUndo();
+    state.mons = Engine.swapSlots(state.mons, index, target);
+    renderAll();
+    // renderSetup replaces the whole grid, so the button that was just pressed no longer
+    // exists. Without this a keyboard user is dumped back to the top of the document.
+    const moved = els.teamGrid.querySelectorAll(".mon-card")[target];
+    if (!moved) return;
+    const same = moved.querySelector(`[data-action="move-mon"][data-delta="${delta}"]`);
+    const opposite = moved.querySelector(`[data-action="move-mon"][data-delta="${-delta}"]`);
+    const landing = same && !same.disabled ? same : opposite;
+    if (landing) landing.focus();
   }
   function undoClear() {
     if (!lastUndoState) return;
@@ -3568,6 +3806,7 @@
       if (name === "pick-move") return openTypePicker({monIndex:index,field:"move",moveIndex:Number(action.dataset.move)});
       if (name === "toggle-bring") return toggleBring(index);
       if (name === "clear-mon") return clearMon(index);
+      if (name === "move-mon") return moveMon(index, Number(action.dataset.delta));
       if (name === "show-detail") {
         if (suppressNextMarkerClick) { suppressNextMarkerClick = false; return; }
         return showMatchupDetail(index, action.dataset.target);
