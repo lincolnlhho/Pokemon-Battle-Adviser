@@ -89,14 +89,17 @@ if (html.includes('id="coffee-styles"')) {
   step(4, 'injected coffee styles into <head>');
 }
 
-/* 5. coffee nav tab -------------------------------------------------------- */
+/* 5. coffee nav tab, last in the bar --------------------------------------- */
+/* Anchored to the LAST app tab, not to Exposure. v2 added five analysis views sitting behind
+   a deliberate group separator, so injecting after Exposure would wedge an unrelated tab into
+   the middle of that group. Coffee is not an analysis view; it belongs at the end. */
 if (html.includes('data-view="coffee"')) {
   step(5, 'coffee nav tab already present');
 } else {
-  const LAST_NAV = /^([^\n]*<button class="nav-tab" data-view="exposure">[^\n]*<\/button>)$/m;
-  if (!LAST_NAV.test(html)) die('nav anchor <button class="nav-tab" data-view="exposure"> not found');
+  const LAST_NAV = /^([^\n]*<button class="nav-tab" data-view="frontier">[^\n]*<\/button>)$/m;
+  if (!LAST_NAV.test(html)) die('nav anchor <button class="nav-tab" data-view="frontier"> not found');
   html = html.replace(LAST_NAV, `$1\n${part('nav-button.html')}`);
-  step(5, 'injected coffee nav tab');
+  step(5, 'injected coffee nav tab after the last app tab');
 }
 
 /* 6. coffee view section, after the last existing view --------------------- */
@@ -128,30 +131,36 @@ if (/coffeeView:\s*document\.getElementById/.test(html)) {
   step(7, 'registered els.coffeeView');
 }
 
-/* 8. show/hide the view on render ------------------------------------------ */
-if (/els\.coffeeView\.hidden/.test(html)) {
-  step(8, 'render already toggles the coffee view');
+/* 8. register the view so it renders and routes ---------------------------- */
+/* v2 replaced the per-view `els.xxxView.hidden = ...` lines and the hand-written setView
+   whitelist with one array. renderNavigation loops VIEW_IDS to decide what is hidden, and
+   both setView and sanitiseState test membership of it. So the old steps 8 and 9 are now the
+   same single change: put "coffee" in VIEW_IDS and it is routable AND shown.
+   Appended last so nav order and view order agree. */
+const VIEW_IDS_ANCHOR =
+  'const VIEW_IDS = ["setup", "analytics", "exposure", ...CHART_VIEWS.map(view => view.id)];';
+if (/const VIEW_IDS = \[[^\]]*"coffee"/.test(html)) {
+  step(8, 'VIEW_IDS already includes "coffee"');
 } else {
-  const HIDE = /^([^\n]*els\.exposureView\.hidden = state\.view !== "exposure";)$/m;
-  if (!HIDE.test(html)) die('render anchor els.exposureView.hidden not found');
-  html = html.replace(HIDE, `$1\n${part('render-line.txt')}`);
-  step(8, 'render now toggles the coffee view');
+  if (!html.includes(VIEW_IDS_ANCHOR)) {
+    die('VIEW_IDS declaration not found in its expected form — check whether app.html changed it');
+  }
+  html = html.replace(VIEW_IDS_ANCHOR,
+    'const VIEW_IDS = ["setup", "analytics", "exposure", ...CHART_VIEWS.map(view => view.id), "coffee"];');
+  step(8, 'added "coffee" to VIEW_IDS (render toggle and routing in one)');
 }
 
-/* 9. let setView accept "coffee" ------------------------------------------- */
-/* Without this the whitelist silently bounces every unknown view to "setup", so the tab
-   would highlight and then dump the visitor straight back on Team setup. */
-if (/view === "coffee"/.test(html)) {
-  step(9, 'setView already accepts "coffee"');
-} else {
-  const GUARD = 'state.view = view === "analytics" || view === "exposure" ? view : "setup";';
-  if (!html.includes(GUARD)) {
-    die('setView whitelist not found in its expected form — check whether app.html changed it');
-  }
-  html = html.replace(GUARD,
-    'state.view = view === "analytics" || view === "exposure" || view === "coffee" ? view : "setup";');
-  step(9, 'widened the setView whitelist to accept "coffee"');
-}
+/* 9. confirm the routing actually honours VIEW_IDS ------------------------- */
+/* Step 8 only works because setView and sanitiseState both test that array. If a future
+   app.html reverts to a hand-written whitelist, step 8 would still appear to succeed and the
+   coffee tab would highlight, then dump the visitor straight back on Team setup — the exact
+   failure the old step 9 existed to prevent. Verified rather than patched, because in v2
+   there is nothing left to patch. */
+const SETVIEW  = 'state.view = VIEW_IDS.includes(view) ? view : "setup";';
+const SANITISE = 'clean.view = VIEW_IDS.includes(input.view) ? input.view : "setup";';
+if (!html.includes(SETVIEW))  die('setView no longer tests VIEW_IDS — the coffee tab would bounce to Team setup');
+if (!html.includes(SANITISE)) die('sanitiseState no longer tests VIEW_IDS — a saved coffee view would be discarded');
+step(9, 'setView and sanitiseState both honour VIEW_IDS');
 
 /* final gate: refuse to write anything half-built --------------------------- */
 const required = [
@@ -162,8 +171,8 @@ const required = [
   ['data-view="coffee"',                   'coffee nav tab'],
   ['id="coffeeView"',                      'coffee view section'],
   ['coffeeView: document.getElementById',  'els registration'],
-  ['els.coffeeView.hidden',                'render toggle'],
-  ['view === "coffee"',                    'setView whitelist'],
+  [', "coffee"];',                         'coffee in VIEW_IDS'],
+  ['VIEW_IDS.includes(view)',              'setView honours VIEW_IDS'],
 ];
 const missing = required.filter(([needle]) => !html.includes(needle)).map(([, label]) => label);
 if (missing.length) die(`output is missing: ${missing.join(', ')}`);

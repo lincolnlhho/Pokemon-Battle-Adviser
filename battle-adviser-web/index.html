@@ -353,6 +353,10 @@
     border-radius: 13px;
     background: rgba(255,255,255,.14);
     border: 1px solid rgba(255,255,255,.17);
+    /* Eight tabs overflow a narrow window. Scroll the bar rather than wrap or squash it. */
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
   .nav-tab {
     min-height: 40px;
@@ -363,8 +367,12 @@
     padding: 0 16px;
     font-weight: 750;
     cursor: pointer;
+    white-space: nowrap;
+    flex: none;
   }
   .nav-tab.active { color: var(--brand-dark); background: var(--on-header); box-shadow: 0 3px 10px rgba(0,0,0,.13); }
+  /* The five deeper views are a different class of thing from the two originals. */
+  .nav-group-start { margin-left: 9px; box-shadow: inset 1px 0 0 rgba(255,255,255,.22); padding-left: 19px; }
 
   main {
     width: min(1540px, 100%);
@@ -1054,6 +1062,128 @@
   }
   .help-text { color: var(--muted); font-size: .76rem; line-height: 1.5; }
 
+  /* ---- Saved teams library ---- */
+  .library-save { display: flex; gap: 8px; margin-bottom: 14px; }
+  .text-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: var(--surface-soft);
+    padding: 0 12px;
+    height: 38px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: .82rem;
+  }
+  .text-input:focus-visible { outline: 2px solid var(--brand-ring); outline-offset: 1px; }
+  .library-list { display: flex; flex-direction: column; gap: 8px; }
+  .library-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-soft);
+    padding: 9px 11px;
+  }
+  /* The squad currently loaded, so a Load click that appears to do nothing is explained. */
+  .library-row.current { border-color: var(--brand-ring); background: var(--brand-wash); }
+  .library-row .library-name { font-weight: 620; font-size: .84rem; color: var(--ink); }
+  .library-row .library-meta { color: var(--muted); font-size: .74rem; }
+  .library-row .library-actions { display: flex; gap: 6px; margin-left: auto; }
+  .library-empty {
+    border: 1px dashed var(--line-strong);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    color: var(--muted);
+    font-size: .8rem;
+  }
+
+  /* ---- v2 analysis views ---- */
+  .v2-body { padding: 14px 16px 16px; }
+  .v2-note { color: var(--muted); font-size: .76rem; line-height: 1.5; margin: 10px 0 0; }
+  .v2-note strong { color: var(--ink); }
+  .v2-panel-gap { margin-top: 14px; }
+
+  .v2-plot { display: block; width: 100%; height: auto; }
+  .v2-axis-title { font-size: 10px; font-weight: 880; letter-spacing: .09em; text-transform: uppercase; fill: var(--muted); }
+  .v2-tick { font-size: 10.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .v2-quadrant-label { font-size: 9.5px; font-weight: 880; letter-spacing: .1em; text-transform: uppercase; fill: var(--muted); }
+  .v2-gridline { stroke: var(--line); stroke-width: 1; }
+  .v2-midline { stroke: var(--line-strong); stroke-width: 1.25; stroke-dasharray: 4 4; }
+  /* Opaque tint on an empty plot background, never over a filled mark. */
+  .v2-danger-zone { fill: var(--danger-tint); }
+  .v2-bubble { stroke: var(--ink); stroke-opacity: .34; stroke-width: 1.25; }
+  .v2-bubble-label { font-size: 10px; font-weight: 780; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .v2-bubble-hollow { fill: none; stroke: var(--line-strong); stroke-width: 1.25; stroke-dasharray: 3 3; }
+
+  /* Synergy grid */
+  .v2-grid { border-collapse: collapse; width: 100%; }
+  .v2-grid th, .v2-grid td { border-bottom: 1px solid var(--line); }
+  .v2-grid thead th {
+    font-size: .66rem; font-weight: 880; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--muted); padding: 9px 6px; text-align: center; white-space: nowrap;
+  }
+  .v2-grid th.v2-corner { text-align: left; padding: 8px 12px; min-width: 150px; vertical-align: bottom; }
+  .v2-corner-lines { display: flex; flex-direction: column; gap: 3px; font-size: .62rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .v2-corner-lines .v2-arrow { color: var(--brand-ink); font-weight: 880; }
+  .v2-grid th.v2-rowhead { text-align: left; padding: 7px 12px; font-weight: 700; white-space: nowrap; }
+  .v2-grid td.v2-cell { text-align: center; padding: 8px 6px; font-size: .82rem; font-weight: 820; font-variant-numeric: tabular-nums; min-width: 62px; }
+  .v2-grid td.v2-cell.v2-null { background: var(--surface-inset); color: var(--faint); font-weight: 500; }
+  .v2-grid th.v2-total, .v2-grid td.v2-total { border-left: 2px solid var(--line-strong); }
+  .v2-grid td.v2-total { background: var(--surface-sunk); font-weight: 880; }
+  .v2-grid tr.v2-total-row th, .v2-grid tr.v2-total-row td { border-top: 2px solid var(--line-strong); }
+  .v2-typebars { display: flex; gap: 2px; justify-content: center; margin-top: 4px; }
+  .v2-typebar { width: 14px; height: 4px; border-radius: 2px; background: var(--line-strong); flex: none; }
+
+  /* Contribution */
+  .v2-member { border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); margin-bottom: 10px; overflow: hidden; }
+  .v2-member:last-child { margin-bottom: 0; }
+  .v2-member-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; padding: 10px 13px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .v2-member-num { color: var(--muted); font-size: .76rem; font-weight: 880; font-variant-numeric: tabular-nums; }
+  .v2-verdict { margin-left: auto; font-size: .66rem; font-weight: 880; letter-spacing: .09em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid; }
+  .v2-verdict.good { color: var(--safe-ink); border-color: var(--safe-line); background: var(--safe-tint); }
+  .v2-verdict.warn { color: var(--amber-ink); border-color: var(--amber-line); background: var(--surface-soft); }
+  .v2-verdict.bad { color: var(--danger-ink); border-color: var(--danger-line); background: var(--danger-tint); }
+  .v2-verdict.flat { color: var(--muted); border-color: var(--line-strong); background: var(--surface-sunk); }
+  .v2-member-body { padding: 9px 13px 12px; }
+  .v2-bar-row { display: grid; grid-template-columns: 82px 1fr 30px; gap: 10px; align-items: center; padding: 4px 0; }
+  .v2-bar-label { font-size: .66rem; font-weight: 880; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .v2-bar-count { text-align: right; font-size: .78rem; font-weight: 880; font-variant-numeric: tabular-nums; }
+  .v2-bar-count.liab { color: var(--danger-ink); }
+  /* Track is always the full global maximum, so a short fill reads honestly as small
+     relative to the biggest number on the view, not merely small. */
+  .v2-track { height: 17px; border-radius: 5px; background: var(--surface-inset); border: 1px solid var(--line); overflow: hidden; display: flex; }
+  .v2-seg { height: 100%; }
+  .v2-seg.unique-off { background: var(--safe-solid); }
+  .v2-seg.redundant-off { background: var(--safe-soft); }
+  .v2-seg.unique-def { background: var(--header); }
+  .v2-seg.redundant-def { background: var(--chip); }
+  /* Liabilities fill from the right while every other bar fills from the left, so the row
+     reads as a cost pulling back rather than a fourth ordinary measure. */
+  .v2-track.liab { justify-content: flex-end; }
+  .v2-seg.liab { background: var(--danger); }
+
+  /* Frontier table */
+  .v2-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  .v2-table th { text-align: left; padding: 9px 13px; font-size: .66rem; font-weight: 880; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .v2-table td { padding: 8px 13px; border-bottom: 1px solid var(--line); }
+  .v2-table tr:last-child td { border-bottom: none; }
+  .v2-table th.num, .v2-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .v2-table tr.current td { background: var(--brand-wash); }
+  .v2-table tr.current td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
+  .v2-table tr.current .v2-team-name { font-weight: 880; color: var(--brand-ink); }
+  .v2-table tr.unplotted td { color: var(--muted); font-style: italic; }
+  .v2-tag { font-style: normal; font-size: .64rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-left: 6px; }
+
+  @media (max-width: 720px) {
+    .v2-bar-row { grid-template-columns: 68px 1fr 26px; }
+    .v2-grid th.v2-corner { min-width: 120px; }
+  }
+
   .toast {
     position: fixed;
     left: 50%;
@@ -1363,6 +1493,11 @@
           <button class="nav-tab active" data-view="setup">Team setup</button>
           <button class="nav-tab" data-view="analytics">Matchup grid</button>
           <button class="nav-tab" data-view="exposure">Exposure</button>
+          <button class="nav-tab nav-group-start" data-view="quadrant">Quadrants</button>
+          <button class="nav-tab" data-view="synergy">Synergy</button>
+          <button class="nav-tab" data-view="contribution">Contribution</button>
+          <button class="nav-tab" data-view="efficiency">Efficiency</button>
+          <button class="nav-tab" data-view="frontier">Frontier</button>
         <button class="nav-tab" data-view="coffee">Buy Me a Coffee ☕</button>
         </nav>
       </div>
@@ -1388,6 +1523,7 @@
         </div>
         <div class="toolbar-group">
           <button id="loadDemoButton" class="button">Load demo</button>
+          <button id="libraryButton" class="button">Saved teams</button>
           <button id="teamCodeButton" class="button">Team code</button>
           <button id="undoButton" class="button" hidden>Undo clear</button>
           <button id="clearTeamButton" class="button danger">Clear squad</button>
@@ -1498,6 +1634,14 @@
         </div>
       </div>
     </section>
+
+    <!-- The five v2 views. Contents are generated from the CHART_VIEWS registry, header
+         copy included, so adding a view is one row there rather than a section here. -->
+    <section id="quadrantView" class="view" hidden></section>
+    <section id="synergyView" class="view" hidden></section>
+    <section id="contributionView" class="view" hidden></section>
+    <section id="efficiencyView" class="view" hidden></section>
+    <section id="frontierView" class="view" hidden></section>
   </main>
 </div>
 
@@ -1575,6 +1719,24 @@
       <button id="copyTeamCodeButton" class="button">Copy code</button>
       <button id="importTeamCodeButton" class="button primary">Import code</button>
     </div>
+  </div>
+</dialog>
+
+<dialog id="libraryDialog" aria-labelledby="libraryTitle">
+  <div class="dialog-head">
+    <div>
+      <strong id="libraryTitle">Saved teams</strong>
+      <span>Save a squad here to compare it against the others on the Frontier view.</span>
+    </div>
+    <button class="icon-button dialog-close" data-close-dialog="libraryDialog" aria-label="Close">✕</button>
+  </div>
+  <div class="dialog-body">
+    <div class="library-save">
+      <input id="libraryNameInput" class="text-input" type="text" maxlength="40" placeholder="Name this squad" aria-label="Team name">
+      <button id="saveTeamButton" class="button primary">Save current</button>
+    </div>
+    <div id="libraryList" class="library-list"></div>
+    <p class="help-text">Saved teams are stored as team codes in this browser only, the same as your current squad. Loading one replaces what you have open, so save that first if you want to keep it.</p>
   </div>
 </dialog>
 
@@ -2937,7 +3099,18 @@
   } = Engine;
   const {TYPE_COLORS, TYPE_ABBR, mixHex, contrastText} = Tokens;
 
-  const STORAGE_KEY = "pokemon-team-type-index-v1";
+  // v2 keeps its own key. v1 is still installed and the two squads must never overwrite each other.
+  const STORAGE_KEY = "pokemon-team-type-index-v2";
+  /*
+   * battle-adviser.com served the v1 app before this one, so a returning visitor has a squad
+   * saved under the old key on this exact origin. Without a migration they open the new site
+   * to an empty team and reasonably assume they lost it.
+   *
+   * The v1 entry is only ever read, never written or deleted: rolling the site back to v1
+   * must find that squad exactly as its owner left it. The v2 key wins whenever it exists, so
+   * this reads across once and then never again.
+   */
+  const LEGACY_STORAGE_KEY = "pokemon-team-type-index-v1";
 
   /*
    * The demo squad, held as a team code rather than a literal array. Refreshing it is then a
@@ -2950,8 +3123,75 @@
   const emptyMon = Engine.emptyMon;
   const defaultState = () => ({
     ...Engine.defaultState(),
-    view: "setup", displayMode: "effectiveness", chartColour: "defence", chartSort: "net"
+    view: "setup", displayMode: "effectiveness", chartColour: "defence", chartSort: "net",
+    library: []
   });
+
+  /*
+   * A saved team is stored as a team code, not as a squad object. The engine already knows
+   * how to round-trip one of those and its suite already covers the codec, so the library
+   * adds a name and an id and nothing else.
+   *
+   * The cap keeps the Frontier plot readable. Twelve bubbles on an 18x18 grid is dense
+   * already.
+   */
+  const LIBRARY_LIMIT = 12;
+  let libraryIdCounter = 0;
+  function makeTeamId() {
+    libraryIdCounter += 1;
+    return `team-${Date.now().toString(36)}-${libraryIdCounter}`;
+  }
+
+  /*
+   * The five v2 views, registered as data. Adding one is a row here plus a render function,
+   * not another branch in setView, sanitiseState, renderNavigation and renderAll.
+   *
+   * Header copy lives here rather than in the markup so a view's words and its maths sit
+   * next to each other. `render` takes the bundle from analysisBundle() and returns an HTML
+   * string. Views never read state, never call the type chart, and never write to the DOM.
+   *
+   * Declared above loadState() on purpose: sanitiseState validates state.view against
+   * VIEW_IDS on the very first load, so this cannot sit further down the file.
+   */
+  const CHART_VIEWS = [
+    {
+      id: "quadrant", label: "Quadrants", eyebrow: "Exposure against response",
+      title: "Which types threaten you and get away with it?",
+      lede: "One bubble per attacking type. Left to right is how many of your active slots take 2× or more from it. Bottom to top is how many answer it with a move landing 2× or more. Bubble size is how many take a 4× double weakness.",
+      caveat: "Bottom right is the corner that matters: types that hit you hard and cannot be punished. Top left is a matchup you already win. Abilities are not modelled.",
+      render: bundle => renderQuadrants(bundle)
+    },
+    {
+      id: "synergy", label: "Synergy", eyebrow: "Who covers whom",
+      title: "Who is carrying the team, and who is being carried?",
+      lede: "Read a row as the member being protected and a column as the member protecting. A cell counts how many of the row member's weaknesses the column member answers super-effectively.",
+      caveat: "The grid is deliberately asymmetric. Does B cover A, and does A cover B, are different questions that usually give different numbers, so the two totals at the edges carry more than the cells do.",
+      render: bundle => renderSynergy(bundle)
+    },
+    {
+      id: "contribution", label: "Contribution", eyebrow: "Unique against redundant",
+      title: "Is this one expanding the team, or repeating it?",
+      lede: "Per member, split by whether it is the only slot doing the job or one of several. A member can cover a lot of ground and still add little if a teammate already covers all of it.",
+      caveat: "Liabilities count only weaknesses that are flagged team-shared. A weakness a teammate answers is not costing the team anything, so it is not charged here.",
+      render: bundle => renderContribution(bundle)
+    },
+    {
+      id: "efficiency", label: "Efficiency", eyebrow: "Coverage against cost",
+      title: "Who earns their slot?",
+      lede: "One bubble per member. Left to right is liabilities, so further right is worse. Bottom to top is total offensive coverage, so higher is better. Bubble size is the coverage nobody else provides.",
+      caveat: "A small bubble sitting top left is easy to replace. A large bubble anywhere is not, however ordinary its position looks.",
+      render: bundle => renderEfficiency(bundle)
+    },
+    {
+      id: "frontier", label: "Frontier", eyebrow: "Saved teams compared",
+      title: "Which of your teams is actually strongest?",
+      lede: "One bubble per saved team, both axes fixed at 0 to 18 so teams read on the same absolute scale. Right is resilience, 18 minus the shared weaknesses. Up is breadth, 18 minus the types nothing answers. Bubble size is single points of failure, so smaller is better.",
+      caveat: "An empty team has nothing to flag, so it would score a hollow 18 and plot as your best. Empty teams are listed below the plot instead of drawn on it.",
+      render: bundle => renderFrontier(bundle)
+    }
+  ];
+  const VIEW_IDS = ["setup", "analytics", "exposure", ...CHART_VIEWS.map(view => view.id), "coffee"];
+
   let state = loadState();
   let pickerContext = null;
   let lastUndoState = null;
@@ -2972,12 +3212,13 @@
     diagnosticsDialog: document.getElementById("diagnosticsDialog"), diagnosticsBody: document.getElementById("diagnosticsBody"), diagnosticsButton: document.getElementById("diagnosticsButton"), engineBadgeText: document.getElementById("engineBadgeText"),
     typeChartDialog: document.getElementById("typeChartDialog"), typeChartGrid: document.getElementById("typeChartGrid"),
     teamCodeDialog: document.getElementById("teamCodeDialog"), teamCodeArea: document.getElementById("teamCodeArea"), quickPeek: document.getElementById("quickPeek"),
+    libraryDialog: document.getElementById("libraryDialog"), libraryList: document.getElementById("libraryList"), libraryNameInput: document.getElementById("libraryNameInput"),
     toast: document.getElementById("toast"), toastMessage: document.getElementById("toastMessage"), toastAction: document.getElementById("toastAction"), undoButton: document.getElementById("undoButton")
   };
 
   function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (!raw) return defaultState();
       const parsed = JSON.parse(raw);
       return sanitiseState(parsed);
@@ -2988,11 +3229,12 @@
   function sanitiseState(input) {
     const clean = defaultState();
     if (!input || typeof input !== "object") return clean;
-    clean.view = input.view === "analytics" || input.view === "exposure" ? input.view : "setup";
+    clean.view = VIEW_IDS.includes(input.view) ? input.view : "setup";
     clean.analysisMode = input.analysisMode === "selection" || input.analysisMode === "four" ? "selection" : "six";
     clean.displayMode = input.displayMode === "moves" ? "moves" : "effectiveness";
     clean.chartColour = input.chartColour === "move" ? "move" : "defence";
     clean.chartSort = input.chartSort === "type" ? "type" : "net";
+    clean.library = sanitiseLibrary(input.library);
     if (Array.isArray(input.mons)) {
       clean.mons = Array.from({length:6}, (_, index) => sanitiseMon(input.mons[index]));
     }
@@ -3002,6 +3244,144 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* Offline file remains functional without persistence. */ }
   }
 
+  /*
+   * A stored entry is trusted only as far as the engine's decoder will vouch for it. An
+   * entry whose code will not decode is dropped, never repaired and never thrown: one bad
+   * row written by an older build must not take the library, or the app, down with it.
+   */
+  function sanitiseLibrary(input) {
+    if (!Array.isArray(input)) return [];
+    const clean = [];
+    for (const entry of input) {
+      if (clean.length >= LIBRARY_LIMIT) break;
+      if (!entry || typeof entry !== "object" || typeof entry.code !== "string" || !entry.code) continue;
+      try { Engine.decodeTeamCode(entry.code); } catch (error) { continue; }
+      const name = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 40) : "Untitled team";
+      clean.push({id: typeof entry.id === "string" && entry.id ? entry.id : makeTeamId(), name, code: entry.code});
+    }
+    return clean;
+  }
+
+  /*
+   * Decoded view of the library, which is what the aggregates read. sanitiseLibrary has
+   * already rejected anything undecodable, so the guard here is belt and braces for a code
+   * that was written directly into storage between loads.
+   */
+  function libraryTeams() {
+    const teams = [];
+    for (const entry of state.library) {
+      try { teams.push({id:entry.id, name:entry.name, mons:Engine.decodeTeamCode(entry.code).mons}); }
+      catch (error) { /* dropped, same rule as sanitiseLibrary */ }
+    }
+    return teams;
+  }
+
+  function uniqueTeamName(wanted) {
+    const base = (wanted || "").trim().slice(0, 40) || `Team ${state.library.length + 1}`;
+    const taken = new Set(state.library.map(entry => entry.name));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base} ${n}`)) n += 1;
+    return `${base} ${n}`;
+  }
+
+  function saveCurrentTeam(name) {
+    if (state.library.length >= LIBRARY_LIMIT) {
+      return showToast(`The library holds ${LIBRARY_LIMIT} teams. Delete one to save another.`);
+    }
+    const entry = {id:makeTeamId(), name:uniqueTeamName(name), code:encodeTeamCode(state)};
+    state.library = [...state.library, entry];
+    els.libraryNameInput.value = "";
+    renderAll();
+    renderLibrary();
+    showToast(`Saved "${entry.name}"`);
+  }
+
+  /*
+   * Loading replaces the open squad. That is destructive, so it goes through the same undo
+   * path as Clear squad rather than inventing a second one.
+   */
+  function loadLibraryTeam(id) {
+    const entry = state.library.find(item => item.id === id);
+    if (!entry) return;
+    let decoded;
+    try { decoded = Engine.decodeTeamCode(entry.code); }
+    catch (error) { return showToast(`Could not load "${entry.name}": ${error.message}`); }
+    snapshotForUndo();
+    state.mons = decoded.mons;
+    renderAll();
+    renderLibrary();
+    showToast(`Loaded "${entry.name}"`, "Undo", undoClear);
+  }
+
+  function renameLibraryTeam(id) {
+    const entry = state.library.find(item => item.id === id);
+    if (!entry) return;
+    const wanted = window.prompt("Rename this team", entry.name);
+    if (wanted === null) return;
+    const trimmed = wanted.trim();
+    if (!trimmed) return showToast("A team needs a name");
+    const others = state.library.filter(item => item.id !== id);
+    const taken = new Set(others.map(item => item.name));
+    if (taken.has(trimmed.slice(0, 40))) return showToast("Another team already has that name");
+    entry.name = trimmed.slice(0, 40);
+    renderAll();
+    renderLibrary();
+  }
+
+  function duplicateLibraryTeam(id) {
+    const entry = state.library.find(item => item.id === id);
+    if (!entry) return;
+    if (state.library.length >= LIBRARY_LIMIT) {
+      return showToast(`The library holds ${LIBRARY_LIMIT} teams. Delete one to duplicate another.`);
+    }
+    const copy = {id:makeTeamId(), name:uniqueTeamName(`${entry.name} copy`), code:entry.code};
+    state.library = [...state.library, copy];
+    renderAll();
+    renderLibrary();
+    showToast(`Duplicated as "${copy.name}"`);
+  }
+
+  function deleteLibraryTeam(id) {
+    const entry = state.library.find(item => item.id === id);
+    if (!entry) return;
+    const removed = entry;
+    const at = state.library.indexOf(entry);
+    state.library = state.library.filter(item => item.id !== id);
+    renderAll();
+    renderLibrary();
+    showToast(`Deleted "${removed.name}"`, "Undo", () => {
+      const restored = state.library.slice();
+      restored.splice(Math.min(at, restored.length), 0, removed);
+      state.library = restored;
+      renderAll();
+      renderLibrary();
+    });
+  }
+
+  function renderLibrary() {
+    const current = encodeTeamCode(state);
+    els.libraryList.innerHTML = state.library.length
+      ? state.library.map(entry => {
+          let count = 0;
+          try { count = Engine.decodeTeamCode(entry.code).mons.filter(mon => mon.type1).length; }
+          catch (error) { count = 0; }
+          const isCurrent = entry.code === current;
+          return `<div class="library-row ${isCurrent ? "current" : ""}">
+            <div>
+              <div class="library-name">${escapeAttribute(entry.name)}</div>
+              <div class="library-meta">${count} of 6 configured${isCurrent ? " · open now" : ""}</div>
+            </div>
+            <div class="library-actions">
+              <button class="button small" data-action="library-load" data-team="${escapeAttribute(entry.id)}" ${isCurrent ? "disabled" : ""}>Load</button>
+              <button class="button small" data-action="library-rename" data-team="${escapeAttribute(entry.id)}">Rename</button>
+              <button class="button small" data-action="library-duplicate" data-team="${escapeAttribute(entry.id)}">Duplicate</button>
+              <button class="button small danger" data-action="library-delete" data-team="${escapeAttribute(entry.id)}">Delete</button>
+            </div>
+          </div>`;
+        }).join("")
+      : `<div class="library-empty">No teams saved yet. Name the squad you have open and save it, then build another to compare them.</div>`;
+  }
 
   function typeToken(type) {
     if (!type) return `<span class="field-placeholder">Choose type</span>`;
@@ -3011,21 +3391,651 @@
   function selectedMons() { return configuredMons().filter(item => item.mon.bring); }
   function activeMons() { return state.analysisMode === "selection" ? selectedMons() : configuredMons(); }
 
+  /* ===================================================================
+   * AGGREGATES
+   *
+   * The five v2 views read the same team from different angles. Everything they need is
+   * built here, once, from the engine's public API. No type lookup happens in this block:
+   * calculateDefence and calculateTeamSummary do that, and their answers are only ever
+   * counted, never recomputed.
+   *
+   * INDEXING: `mons` is the engine's {mon, index} item shape, where `index` is the SLOT
+   * number (0-5) and survives filtering. Position in the array is not the slot. Row records
+   * hold slot indices in `attackers` and `weaknesses`, so anything crossing the two must go
+   * through item.index, never the array position. The one exception is defenceGrid, whose
+   * columns are array positions by construction and are documented as such at each use.
+   * =================================================================== */
+
+  /*
+   * 18 x N grid of defensive multipliers. grid[t][i] is TYPES[t] hitting mons[i].
+   *
+   * calculateTeamSummary already reports exposures (2x and above) and immunities (0x), but
+   * not resists (¼x, ½x), and every view below needs them. A weakness is only shared when
+   * nobody resists it, and "unique defence" means exactly one member does.
+   */
+  function defenceGrid(mons) {
+    return TYPES.map(type => mons.map(item => {
+      const defence = calculateDefence(item.mon, type);
+      return defence ? defence.total : null;
+    }));
+  }
+
+  /*
+   * The per-type record every v2 view reads. calculateTeamSummary supplies the counts; this
+   * adds the resist count the grid makes available, plus the three flags derived from it.
+   * Nothing here is counted a second time.
+   */
+  function teamRows(mons) {
+    const grid = defenceGrid(mons);
+    return calculateTeamSummary(mons).rows.map((row, typeIndex) => {
+      const column = grid[typeIndex];
+      const resistCount = column.filter(value => value !== null && value > 0 && value < 1).length;
+      return {
+        ...row,
+        resistCount,
+        /*
+         * SHARED: two or more members fold to this type and nobody resists or is immune to
+         * it. One resist is an answer, and that single fact is the whole distinction between
+         * a weakness the team absorbs and one that beats it.
+         */
+        shared: row.weaknessCount >= 2 && (resistCount + row.immuneCount) === 0,
+        // BLIND and SINGLE POINT read offensiveCount, which the engine already filtered at
+        // its 2x answer threshold. Do not re-test scores here or the two will drift.
+        blind: row.offensiveCount === 0,
+        singlePoint: row.offensiveCount === 1
+      };
+    });
+  }
+
+  /*
+   * matrix[a][b] = how many of member A's weaknesses member B answers super-effectively.
+   *
+   * Asymmetric by design. "Does B cover A?" and "Does A cover B?" are different questions
+   * and will usually give different numbers, so the matrix must never be transposed or
+   * mirrored. Diagonal is null: a member covering its own weakness is not synergy.
+   *
+   * Row and column positions index `mons`. The row records hold slot indices, so the
+   * lookups below convert through mons[a].index and mons[b].index.
+   */
+  function synergyMatrix(mons, rows) {
+    return mons.map((protectedItem, a) => mons.map((protectorItem, b) => {
+      if (a === b) return null;
+      let count = 0;
+      for (const row of rows) {
+        if (!row.weaknesses.includes(protectedItem.index)) continue;
+        if (row.attackers.includes(protectorItem.index)) count++;
+      }
+      return count;
+    }));
+  }
+
+  /*
+   * The same coverage data re-aggregated by MEMBER instead of by type. This is the question
+   * the type-indexed views cannot answer: is this Pokémon expanding the team, or duplicating
+   * what it already does?
+   *
+   *   unique     only this member does it
+   *   redundant  a teammate already does it too
+   *   liability  this member is weak to a type that is a FLAGGED SHARED weakness
+   *
+   * A weakness a teammate answers is not costing the team anything, so it is not a
+   * liability. That is what keeps this from being a second, softer weakness count.
+   *
+   * `grid` columns are array positions in `mons`; `rows` hold slot indices. Both appear
+   * here, so read the index source on every line.
+   */
+  function memberContribution(mons, rows, grid) {
+    return mons.map((item, position) => {
+      let uniqueOffence = 0, redundantOffence = 0, uniqueDefence = 0, redundantDefence = 0, liabilities = 0;
+      rows.forEach((row, typeIndex) => {
+        if (row.attackers.includes(item.index)) {
+          if (row.offensiveCount === 1) uniqueOffence++; else redundantOffence++;
+        }
+        const defence = grid[typeIndex][position];
+        if (defence === null) return;
+        if (defence < 1) {
+          // resistCount + immuneCount is every member below 1x, which is what "only one
+          // member holds this line" has to mean.
+          if (row.resistCount + row.immuneCount === 1) uniqueDefence++; else redundantDefence++;
+        } else if (defence > 1 && row.shared) {
+          liabilities++;
+        }
+      });
+      return {
+        index: item.index, uniqueOffence, redundantOffence, uniqueDefence, redundantDefence, liabilities,
+        totalOffence: uniqueOffence + redundantOffence,
+        totalDefence: uniqueDefence + redundantDefence,
+        uniqueTotal: uniqueOffence + uniqueDefence
+      };
+    });
+  }
+
+  /*
+   * The whole pipeline run across every saved team, for the Frontier view.
+   *
+   * Both axes are flag counts already shown elsewhere, subtracted from 18 so that higher
+   * always reads as better on both. Fragility is left as a raw count because it is drawn as
+   * bubble size, where bigger reading as worse is the intuitive direction.
+   *
+   * An empty team has nothing to flag, so it would score a hollow resilience 18 and read as
+   * the best team saved. It returns nulls instead, and the view lists it separately rather
+   * than plotting it.
+   */
+  function teamSummaries(entries) {
+    return entries.map(entry => {
+      const mons = entry.mons.map((mon, index) => ({mon, index})).filter(item => item.mon.type1);
+      if (!mons.length) {
+        return {id:entry.id, name:entry.name, configuredCount:0, resilience:null, breadth:null, fragility:null};
+      }
+      const rows = teamRows(mons);
+      return {
+        id: entry.id,
+        name: entry.name,
+        configuredCount: mons.length,
+        resilience: 18 - rows.filter(row => row.shared).length,
+        breadth: 18 - rows.filter(row => row.blind).length,
+        fragility: rows.filter(row => row.singlePoint).length
+      };
+    });
+  }
+
+  /*
+   * Everything the five views read, computed once. They are pure functions of this bundle,
+   * so two views cannot disagree about the same team: there is only one set of numbers.
+   */
+  function analysisBundle() {
+    const mons = activeMons();
+    const grid = defenceGrid(mons);
+    const rows = teamRows(mons);
+    return {mons, grid, rows, matrix:synergyMatrix(mons, rows), contrib:memberContribution(mons, rows, grid)};
+  }
+
+  /*
+   * Only the visible view renders. Drawing all five on every keystroke in the team builder
+   * is wasted work, and on a phone the DOM cost shows.
+   *
+   * Same fail-closed rule as the two original views: if the engine did not validate, the
+   * chart is replaced by an error panel rather than numbers that might be wrong.
+   */
+  function renderChartViews() {
+    const view = CHART_VIEWS.find(item => item.id === state.view);
+    if (!view) return;
+    const host = document.getElementById(`${view.id}View`);
+    const header = `<div class="view-header">
+        <div>
+          <div class="eyebrow">${escapeAttribute(view.eyebrow)}</div>
+          <h1>${escapeAttribute(view.title)}</h1>
+          <p class="lede">${escapeAttribute(view.lede)}</p>
+          <p class="caveat">${escapeAttribute(view.caveat)}</p>
+        </div>
+        <button class="button" data-action="go-setup">Edit team</button>
+      </div>`;
+
+    if (!diagnostics || !diagnostics.ok) {
+      host.innerHTML = `${header}<div class="chart-panel"><div class="engine-error"><div class="empty-icon">!</div><h2>Type engine validation failed</h2><p>Analytics have been disabled so the app cannot display unreliable results. Open diagnostics for the exact failed check.</p></div></div>`;
+      return;
+    }
+
+    // Frontier compares saved teams, so the active-squad toggle has nothing to say there.
+    const controls = view.id === "frontier" ? "" : `<div class="analysis-controls">
+        <div class="control-row">
+          <div class="control-label">Team view</div>
+          <div class="segmented" role="group" aria-label="Team analysis mode">
+            <button class="segment ${state.analysisMode === "six" ? "active" : ""}" data-analysis-mode="six">Full squad</button>
+            <button class="segment ${state.analysisMode === "selection" ? "active" : ""}" data-analysis-mode="selection">Selection</button>
+          </div>
+          <span class="mode-note">${state.analysisMode === "selection" ? "Analysing the slots selected on the matchup grid." : "Analysing every configured slot."}</span>
+        </div>
+      </div>`;
+
+    try {
+      host.innerHTML = `${header}${controls}${view.render(analysisBundle())}`;
+    } catch (error) {
+      host.innerHTML = `${header}<div class="chart-panel"><div class="engine-error"><div class="empty-icon">!</div><h2>This view could not be drawn</h2><p>${escapeAttribute(error.message)}</p></div></div>`;
+    }
+  }
+
+  /* ===================================================================
+   * V2 CHART RENDERERS
+   *
+   * Every function here is pure: bundle in, HTML string out. None reads state, calls the
+   * type chart, or writes to the DOM. That is what lets renderChartViews wrap all five in
+   * one try/catch behind one fail-closed gate.
+   * =================================================================== */
+
+  /*
+   * A point at the maximum sits exactly on the plot edge, so its bubble hangs outside the
+   * plot area by its own radius. The insets are therefore never smaller than MAX_BUBBLE,
+   * or the best team on the board is the one that gets clipped. Asserted in diagnostics.
+   */
+  const MAX_BUBBLE = 23;
+  const PLOT = {w:780, h:452, left:70, top:34, right:34, bottom:60};
+  const PLOT_W = PLOT.w - PLOT.left - PLOT.right;
+  const PLOT_H = PLOT.h - PLOT.top - PLOT.bottom;
+
+  /*
+   * Axis mapping, kept as two named functions so diagnostics can assert their direction.
+   *
+   *   plotX(0, max)   sits on the LEFT edge,   plotX(max, max)  on the right.
+   *   plotY(0, max)   sits on the BOTTOM edge, plotY(max, max)  on the top.
+   *
+   * plotY is the inverted one because SVG y grows downward while data y must grow upward. A
+   * flipped sign here mis-plots every point and still looks entirely plausible on screen,
+   * which is the one class of bug the eye does not catch. Hence the tests.
+   */
+  function plotX(value, max) { return PLOT.left + (max > 0 ? value / max : 0) * PLOT_W; }
+  function plotY(value, max) { return PLOT.top + (1 - (max > 0 ? value / max : 0)) * PLOT_H; }
+
+  /*
+   * Points whose values are small integers land on top of each other constantly: eighteen
+   * types across a 0-6 grid collide by design. Colliding points are spread around a small
+   * ring so every one stays readable. The ring is cosmetic and the legend says so; the
+   * position still encodes the value.
+   */
+  function spreadCollisions(points) {
+    const buckets = new Map();
+    for (const point of points) {
+      const key = `${point.x},${point.y}`;
+      if (!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(point);
+    }
+    /*
+     * A point sitting on the plot edge, pushed further out by the ring, would draw outside
+     * the viewBox and be clipped. Clamping to a MAX_BUBBLE margin keeps every mark whole:
+     * losing the ring offset costs nothing, since it was cosmetic, but losing the bubble
+     * would silently hide the very team or type that scored highest.
+     */
+    const clampX = value => Math.max(MAX_BUBBLE, Math.min(PLOT.w - MAX_BUBBLE, value));
+    const clampY = value => Math.max(MAX_BUBBLE, Math.min(PLOT.h - MAX_BUBBLE, value));
+    const out = [];
+    for (const group of buckets.values()) {
+      if (group.length === 1) { out.push({...group[0], cx:clampX(group[0].px), cy:clampY(group[0].py)}); continue; }
+      const ring = Math.min(13 + group.length * 2.1, 27);
+      group.forEach((point, i) => {
+        const angle = (i / group.length) * Math.PI * 2 - Math.PI / 2;
+        out.push({...point, cx:clampX(point.px + Math.cos(angle) * ring), cy:clampY(point.py + Math.sin(angle) * ring)});
+      });
+    }
+    return out;
+  }
+
+  /*
+   * Shared plot furniture: gridlines, integer ticks, axis titles, the midlines that split
+   * the quadrants, and an opaque tint on the corner that matters. The tint is drawn first,
+   * on empty background only, never over a mark, so it cannot composite with a fill.
+   */
+  function plotFrame(xMax, yMax, xTitle, yTitle, corner) {
+    const ticks = max => {
+      const step = max <= 6 ? 1 : Math.ceil(max / 6);
+      const out = [];
+      for (let v = 0; v <= max; v += step) out.push(v);
+      if (out[out.length - 1] !== max) out.push(max);
+      return out;
+    };
+    const xMid = xMax / 2, yMid = yMax / 2;
+    const right = PLOT.left + PLOT_W, bottom = PLOT.top + PLOT_H;
+
+    // Bottom-right corner: high on the axis where high is bad, low on the one where high is
+    // good. Drawn first, on empty background only, so it never composites with a mark.
+    let svg = corner
+      ? `<rect class="v2-danger-zone" x="${plotX(xMid, xMax)}" y="${plotY(yMid, yMax)}" width="${right - plotX(xMid, xMax)}" height="${bottom - plotY(yMid, yMax)}" />`
+      : "";
+    for (const v of ticks(yMax)) {
+      const y = plotY(v, yMax);
+      svg += `<line class="v2-gridline" x1="${PLOT.left}" y1="${y}" x2="${right}" y2="${y}" />`;
+      svg += `<text class="v2-tick" x="${PLOT.left - 9}" y="${y + 3.5}" text-anchor="end">${v}</text>`;
+    }
+    for (const v of ticks(xMax)) {
+      const x = plotX(v, xMax);
+      svg += `<line class="v2-gridline" x1="${x}" y1="${PLOT.top}" x2="${x}" y2="${bottom}" />`;
+      svg += `<text class="v2-tick" x="${x}" y="${bottom + 17}" text-anchor="middle">${v}</text>`;
+    }
+    svg += `<line class="v2-midline" x1="${plotX(xMid, xMax)}" y1="${PLOT.top}" x2="${plotX(xMid, xMax)}" y2="${bottom}" />`;
+    svg += `<line class="v2-midline" x1="${PLOT.left}" y1="${plotY(yMid, yMax)}" x2="${right}" y2="${plotY(yMid, yMax)}" />`;
+    svg += `<text class="v2-axis-title" x="${PLOT.left + PLOT_W / 2}" y="${PLOT.h - 8}" text-anchor="middle">${escapeAttribute(xTitle)}</text>`;
+    svg += `<text class="v2-axis-title" x="${-(PLOT.top + PLOT_H / 2)}" y="15" text-anchor="middle" transform="rotate(-90)">${escapeAttribute(yTitle)}</text>`;
+    return svg;
+  }
+
+  function quadrantLabels(labels) {
+    const right = PLOT.left + PLOT_W, bottom = PLOT.top + PLOT_H;
+    return `<text class="v2-quadrant-label" x="${PLOT.left + 8}" y="${PLOT.top + 15}">${escapeAttribute(labels.topLeft)}</text>
+      <text class="v2-quadrant-label" x="${right - 8}" y="${bottom - 8}" text-anchor="end">${escapeAttribute(labels.bottomRight)}</text>`;
+  }
+
+  function v2Empty(message) {
+    return `<div class="chart-panel"><div class="empty-state"><div class="empty-icon">P?</div><h2>No active team slots</h2><p>${escapeAttribute(message)}</p><button class="button primary" data-action="go-setup">Set up the team</button></div></div>`;
+  }
+
+  function emptyMessage() {
+    return state.analysisMode === "selection"
+      ? "No Pokémon are selected. Use the P1–P6 controls on the matchup grid to analyse any subset."
+      : "Configure at least one Pokémon type to populate this view.";
+  }
+
+  function memberTypes(mon) {
+    return [mon.type1, mon.type2].filter(Boolean);
+  }
+
+  function typeBars(mon) {
+    const types = memberTypes(mon);
+    const bars = types.length
+      ? types.map(type => `<span class="v2-typebar" style="background:${TYPE_COLORS[type]}"></span>`).join("")
+      : `<span class="v2-typebar"></span>`;
+    return `<div class="v2-typebars">${bars}</div>`;
+  }
+
+  /* ---- Quadrants ---- */
+  function renderQuadrants(bundle) {
+    const {mons, rows, grid} = bundle;
+    if (!mons.length) return v2Empty(emptyMessage());
+    const max = Math.max(1, mons.length);
+
+    const points = rows.map((row, typeIndex) => {
+      // A 4x double weakness is a different fact from a 2x, so it gets its own channel.
+      const severe = grid[typeIndex].filter(value => value !== null && value >= 4).length;
+      return {
+        type: row.type, x: row.weaknessCount, y: row.offensiveCount, severe,
+        px: plotX(row.weaknessCount, max), py: plotY(row.offensiveCount, max)
+      };
+    });
+
+    const marks = spreadCollisions(points).map(point => {
+      // Bounded by MAX_BUBBLE so a type that doubles up on every slot still fits the plot.
+      const radius = 11 + (point.severe / max) * (MAX_BUBBLE - 11);
+      const fill = TYPE_COLORS[point.type];
+      const title = `${point.type}: ${point.x} of ${max} weak, ${point.y} answering${point.severe ? `, ${point.severe} taking 4×` : ""}`;
+      return `<g><title>${escapeAttribute(title)}</title>
+        <circle class="v2-bubble" cx="${point.cx.toFixed(1)}" cy="${point.cy.toFixed(1)}" r="${radius.toFixed(1)}" fill="${fill}" />
+        <text class="v2-bubble-label" x="${point.cx.toFixed(1)}" y="${point.cy.toFixed(1)}" fill="${contrastText(fill)}">${TYPE_ABBR[point.type]}</text>
+      </g>`;
+    }).join("");
+
+    const holes = rows.filter(row => row.weaknessCount >= 2 && row.offensiveCount === 0);
+    const clean = rows.filter(row => row.weaknessCount === 0 && row.offensiveCount >= 2);
+
+    return `<div class="chart-panel">
+      <div class="chart-panel-head"><div><strong>18 types placed by threat and response</strong><span>Analysing ${mons.length} of 6. Bubble size is the count taking a 4× double weakness.</span></div></div>
+      <div class="v2-body">
+        <svg class="v2-plot" viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" aria-label="Exposure against response, one bubble per type">
+          ${plotFrame(max, max, `Slots weak to it (of ${max})`, `Slots answering it (of ${max})`, true)}
+          ${quadrantLabels({topLeft:"Strong matchup", bottomRight:"Major hole"})}
+          ${marks}
+        </svg>
+        <p class="v2-note">${holes.length
+          ? `<strong>${holes.length} type${holes.length === 1 ? "" : "s"} in the bottom-right corner:</strong> ${holes.map(row => row.type).join(", ")}. Two or more slots fold and nothing answers.`
+          : `<strong>No major holes.</strong> Every type that beats two or more slots has at least one answer.`}
+          ${clean.length ? ` ${clean.length} type${clean.length === 1 ? " is" : "s are"} clean the other way, with no exposure and two or more answers.` : ""}
+          Bubbles that would land on the same point are spread around a small ring so each stays readable.</p>
+      </div>
+    </div>`;
+  }
+
+  /* ---- Synergy ---- */
+  function renderSynergy(bundle) {
+    const {mons, matrix} = bundle;
+    if (!mons.length) return v2Empty(emptyMessage());
+    if (mons.length === 1) {
+      return `<div class="chart-panel"><div class="empty-state"><div class="empty-icon">P?</div><h2>Synergy needs two</h2><p>One slot cannot cover itself. Configure or select a second Pokémon and the grid fills in.</p><button class="button primary" data-action="go-setup">Set up the team</button></div></div>`;
+    }
+
+    const receives = mons.map((_, a) => matrix[a].reduce((sum, value) => sum + (value ?? 0), 0));
+    const provides = mons.map((_, b) => mons.reduce((sum, __, a) => sum + (matrix[a][b] ?? 0), 0));
+    const maxCell = Math.max(1, ...matrix.flat().filter(value => value !== null));
+
+    let head = `<tr><th class="v2-corner"><div class="v2-corner-lines">
+        <span>Row: protected</span><span class="v2-arrow">↓ covered by ↓</span><span>Column: protector</span>
+      </div></th>`;
+    mons.forEach(item => {
+      head += `<th>P${item.index + 1}${typeBars(item.mon)}</th>`;
+    });
+    head += `<th class="v2-total">Protected by</th></tr>`;
+
+    let body = "";
+    mons.forEach((protectedItem, a) => {
+      body += `<tr><th class="v2-rowhead">P${protectedItem.index + 1} ${memberTypes(protectedItem.mon).map(typeToken).join("")}</th>`;
+      mons.forEach((protectorItem, b) => {
+        const value = matrix[a][b];
+        if (value === null) { body += `<td class="v2-cell v2-null">—</td>`; return; }
+        // Colour carries one variable: how much cover this cell represents.
+        const shade = mixHex("#ffffff", "#1b7a47", Math.min(1, value / maxCell) * .8);
+        const title = `P${protectorItem.index + 1} answers ${value} of P${protectedItem.index + 1}'s weaknesses`;
+        body += `<td class="v2-cell" style="background:${shade};color:${contrastText(shade)}" title="${escapeAttribute(title)}">${value}</td>`;
+      });
+      body += `<td class="v2-cell v2-total">${receives[a]}</td></tr>`;
+    });
+
+    body += `<tr class="v2-total-row"><th class="v2-rowhead v2-total">Protects</th>`;
+    mons.forEach((_, b) => { body += `<td class="v2-cell v2-total">${provides[b]}</td>`; });
+    body += `<td class="v2-cell v2-total">—</td></tr>`;
+
+    const carrier = mons[provides.indexOf(Math.max(...provides))];
+    const carried = mons[receives.indexOf(Math.max(...receives))];
+
+    return `<div class="chart-panel">
+      <div class="chart-panel-head"><div><strong>Who covers whose weaknesses</strong><span>Analysing ${mons.length} of 6. Read down a column to see what one member does for the rest.</span></div></div>
+      <div class="chart-scroll"><table class="v2-grid"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+      <div class="v2-body" style="padding-top:0">
+        <p class="v2-note"><strong>P${carrier.index + 1} provides the most cover</strong> at ${Math.max(...provides)} weaknesses answered across the team, and <strong>P${carried.index + 1} receives the most</strong> at ${Math.max(...receives)}. A member with a high Protected-by and a low Protects total is being carried.</p>
+      </div>
+    </div>`;
+  }
+
+  /* ---- Contribution ---- */
+  function renderContribution(bundle) {
+    const {mons, contrib} = bundle;
+    if (!mons.length) return v2Empty(emptyMessage());
+
+    /*
+     * One global maximum across all three tracks and all members, so a liabilities bar half
+     * the length of the offence bar above it genuinely means half the magnitude rather than
+     * an artefact of a per-row scale.
+     */
+    const globalMax = Math.max(1, ...contrib.flatMap(record => [record.totalOffence, record.totalDefence, record.liabilities]));
+
+    const ordered = contrib
+      .map((record, position) => ({record, item:mons[position]}))
+      .sort((a, b) => (b.record.uniqueTotal - a.record.uniqueTotal)
+        || (a.record.liabilities - b.record.liabilities)
+        || (a.item.index - b.item.index));
+
+    const verdictFor = record => {
+      const highUnique = record.uniqueTotal >= 4, lowUnique = record.uniqueTotal <= 1;
+      const highLiab = record.liabilities >= 2;
+      if (highUnique && !highLiab) return {label:"Irreplaceable", tone:"good"};
+      if (highUnique && highLiab) return {label:"Specialist", tone:"warn"};
+      if (lowUnique && !highLiab) return {label:"Redundant", tone:"flat"};
+      if (lowUnique && highLiab) return {label:"Weak link", tone:"bad"};
+      return {label:"Contributor", tone:"flat"};
+    };
+
+    const width = value => `${(value / globalMax) * 100}%`;
+
+    const cards = ordered.map(({record, item}) => {
+      const verdict = verdictFor(record);
+      return `<div class="v2-member">
+        <div class="v2-member-head">
+          <span class="v2-member-num">P${item.index + 1}</span>
+          ${memberTypes(item.mon).map(typeToken).join("")}
+          <span class="v2-verdict ${verdict.tone}">${verdict.label}</span>
+        </div>
+        <div class="v2-member-body">
+          <div class="v2-bar-row">
+            <span class="v2-bar-label">Offence</span>
+            <div class="v2-track" title="${record.uniqueOffence} unique, ${record.redundantOffence} also covered by a teammate">
+              <span class="v2-seg unique-off" style="width:${width(record.uniqueOffence)}"></span>
+              <span class="v2-seg redundant-off" style="width:${width(record.redundantOffence)}"></span>
+            </div>
+            <span class="v2-bar-count">${record.totalOffence}</span>
+          </div>
+          <div class="v2-bar-row">
+            <span class="v2-bar-label">Defence</span>
+            <div class="v2-track" title="${record.uniqueDefence} unique, ${record.redundantDefence} also covered by a teammate">
+              <span class="v2-seg unique-def" style="width:${width(record.uniqueDefence)}"></span>
+              <span class="v2-seg redundant-def" style="width:${width(record.redundantDefence)}"></span>
+            </div>
+            <span class="v2-bar-count">${record.totalDefence}</span>
+          </div>
+          <div class="v2-bar-row">
+            <span class="v2-bar-label">Liabilities</span>
+            <div class="v2-track liab" title="Weaknesses that are also flagged team-shared weaknesses">
+              <span class="v2-seg liab" style="width:${width(record.liabilities)}"></span>
+            </div>
+            <span class="v2-bar-count liab">${record.liabilities}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+
+    return `<div class="chart-panel">
+      <div class="chart-panel-head"><div><strong>Sorted by unique contribution, most irreplaceable first</strong><span>Analysing ${mons.length} of 6. All bars share one scale, so lengths compare across rows and across tracks.</span></div></div>
+      <div class="v2-body">
+        ${cards}
+        <div class="legend" style="grid-template-columns:repeat(3,minmax(0,1fr));border:0;padding:12px 0 0;background:transparent">
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--safe-solid)"></span><span><strong>Unique offence</strong><br>Only this slot hits it</span></div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--safe-soft)"></span><span><strong>Redundant offence</strong><br>A teammate hits it too</span></div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--header)"></span><span><strong>Unique defence</strong><br>Only this slot resists it</span></div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--chip)"></span><span><strong>Redundant defence</strong><br>A teammate resists it too</span></div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--danger)"></span><span><strong>Liability</strong><br>Fills from the right, a cost</span></div>
+        </div>
+        <p class="v2-note">A liability counts only where the weakness is flagged team-shared, meaning two or more slots fold and nobody resists. A weakness a teammate answers is not charged to anyone.</p>
+      </div>
+    </div>`;
+  }
+
+  /* ---- Efficiency ---- */
+  function renderEfficiency(bundle) {
+    const {mons, contrib} = bundle;
+    if (!mons.length) return v2Empty(emptyMessage());
+
+    // Floors keep a one-member team, or an all-zero axis, from collapsing onto an edge.
+    const xMax = Math.max(2, ...contrib.map(record => record.liabilities));
+    const yMax = Math.max(2, ...contrib.map(record => record.totalOffence));
+    const maxUnique = Math.max(1, ...contrib.map(record => record.uniqueTotal));
+
+    const points = contrib.map((record, position) => ({
+      record, item:mons[position],
+      x: record.liabilities, y: record.totalOffence,
+      px: plotX(record.liabilities, xMax), py: plotY(record.totalOffence, yMax)
+    }));
+
+    const marks = spreadCollisions(points).map(point => {
+      const radius = 11 + (point.record.uniqueTotal / maxUnique) * (MAX_BUBBLE - 11);
+      const fill = TYPE_COLORS[point.item.mon.type1];
+      const title = `P${point.item.index + 1}: ${point.y} coverage, ${point.x} liabilit${point.x === 1 ? "y" : "ies"}, ${point.record.uniqueTotal} of it unique`;
+      return `<g><title>${escapeAttribute(title)}</title>
+        <circle class="v2-bubble" cx="${point.cx.toFixed(1)}" cy="${point.cy.toFixed(1)}" r="${radius.toFixed(1)}" fill="${fill}" />
+        <text class="v2-bubble-label" x="${point.cx.toFixed(1)}" y="${point.cy.toFixed(1)}" fill="${contrastText(fill)}">P${point.item.index + 1}</text>
+      </g>`;
+    }).join("");
+
+    const ranked = [...points].sort((a, b) => b.record.uniqueTotal - a.record.uniqueTotal);
+    const best = ranked[0], worst = ranked[ranked.length - 1];
+
+    return `<div class="chart-panel">
+      <div class="chart-panel-head"><div><strong>Coverage against the cost of carrying it</strong><span>Analysing ${mons.length} of 6. Bubble size is unique contribution, the coverage nobody else provides.</span></div></div>
+      <div class="v2-body">
+        <svg class="v2-plot" viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" aria-label="Coverage against liabilities, one bubble per member">
+          ${plotFrame(xMax, yMax, "Liabilities (lower is better)", "Offensive coverage", true)}
+          ${quadrantLabels({topLeft:"Efficient", bottomRight:"Potential weak link"})}
+          ${marks}
+        </svg>
+        <p class="v2-note"><strong>P${best.item.index + 1} contributes the most that nobody else does</strong> at ${best.record.uniqueTotal} unique.
+          ${ranked.length > 1 && worst.record.uniqueTotal < best.record.uniqueTotal
+            ? `P${worst.item.index + 1} contributes the least unique coverage at ${worst.record.uniqueTotal}, so it is the easiest slot to swap.`
+            : ""}
+          A small bubble sitting top left is comfortable but replaceable. A large bubble is not, wherever it sits.</p>
+      </div>
+    </div>`;
+  }
+
+  /* ---- Frontier ---- */
+  function renderFrontier() {
+    const teams = libraryTeams();
+    if (!teams.length) {
+      return `<div class="chart-panel"><div class="empty-state"><div class="empty-icon">P?</div><h2>No teams saved yet</h2><p>Frontier compares saved teams against each other. Open Saved teams on the setup tab, name the squad you have open, and save it. Build a second and they appear here together.</p><button class="button primary" data-action="go-setup">Set up the team</button></div></div>`;
+    }
+
+    const summaries = teamSummaries(teams);
+    const currentCode = encodeTeamCode(state);
+    const currentId = (state.library.find(entry => entry.code === currentCode) || {}).id;
+    const plotted = summaries.filter(summary => summary.resilience !== null);
+    const unplotted = summaries.filter(summary => summary.resilience === null);
+    const maxFragility = Math.max(1, ...plotted.map(summary => summary.fragility));
+
+    const points = plotted.map(summary => ({
+      summary,
+      x: summary.resilience, y: summary.breadth,
+      px: plotX(summary.resilience, 18), py: plotY(summary.breadth, 18)
+    }));
+
+    const marks = spreadCollisions(points).map(point => {
+      const isCurrent = point.summary.id === currentId;
+      const radius = 11 + (point.summary.fragility / maxFragility) * (MAX_BUBBLE - 11);
+      const fill = isCurrent ? "var(--brand)" : "var(--chip)";
+      const title = `${point.summary.name}: resilience ${point.x}, breadth ${point.y}, ${point.summary.fragility} single point${point.summary.fragility === 1 ? "" : "s"} of failure`;
+      return `<g><title>${escapeAttribute(title)}</title>
+        <circle class="v2-bubble" cx="${point.cx.toFixed(1)}" cy="${point.cy.toFixed(1)}" r="${radius.toFixed(1)}" fill="${fill}" ${isCurrent ? 'stroke-width="3" stroke-opacity="1"' : ""} />
+        <text class="v2-bubble-label" x="${point.cx.toFixed(1)}" y="${point.cy.toFixed(1)}" fill="${isCurrent ? "#ffffff" : "var(--ink)"}">${escapeAttribute(point.summary.name.slice(0, 2).toUpperCase())}</text>
+      </g>`;
+    }).join("");
+
+    const ranked = [...plotted].sort((a, b) =>
+      ((b.resilience + b.breadth) - (a.resilience + a.breadth)) || (a.fragility - b.fragility));
+
+    const rows = ranked.map((summary, i) => `<tr class="${summary.id === currentId ? "current" : ""}">
+        <td class="num">${i + 1}</td>
+        <td><span class="v2-team-name">${escapeAttribute(summary.name)}</span>${summary.id === currentId ? `<span class="v2-tag">open now</span>` : ""}</td>
+        <td class="num">${summary.configuredCount}</td>
+        <td class="num">${summary.resilience}</td>
+        <td class="num">${summary.breadth}</td>
+        <td class="num">${summary.fragility}</td>
+      </tr>`).join("")
+      + unplotted.map(summary => `<tr class="unplotted ${summary.id === currentId ? "current" : ""}">
+        <td class="num">—</td>
+        <td><span class="v2-team-name">${escapeAttribute(summary.name)}</span><span class="v2-tag">not plotted, empty</span></td>
+        <td class="num">0</td><td class="num">—</td><td class="num">—</td><td class="num">—</td>
+      </tr>`).join("");
+
+    const plot = plotted.length
+      ? `<svg class="v2-plot" viewBox="0 0 ${PLOT.w} ${PLOT.h}" role="img" aria-label="Resilience against breadth, one bubble per saved team">
+          ${plotFrame(18, 18, "Resilience (18 − shared weaknesses)", "Breadth (18 − types unanswered)", false)}
+          ${quadrantLabels({topLeft:"Broad but brittle", bottomRight:"Solid but narrow"})}
+          <text class="v2-quadrant-label" x="${PLOT.left + PLOT_W - 8}" y="${PLOT.top + 15}" text-anchor="end">Strongest</text>
+          ${marks}
+        </svg>`
+      : `<div class="empty-state"><h2>Nothing to plot yet</h2><p>Every saved team is empty. An empty team has nothing to flag, so it would score a hollow 18 and read as your best.</p></div>`;
+
+    return `<div class="chart-panel">
+      <div class="chart-panel-head"><div><strong>${plotted.length} team${plotted.length === 1 ? "" : "s"} on one scale</strong><span>Both axes fixed at 0 to 18, never rescaled to the teams you happen to have saved. Bubble size is single points of failure.</span></div></div>
+      <div class="v2-body">
+        ${plot}
+        <p class="v2-note">${ranked.length
+          ? `<strong>${escapeAttribute(ranked[0].name)} leads</strong> on resilience plus breadth. Top right is the corner to aim for. A large bubble means the team's answers rest on one slot, so it can look strong and still fold when that slot is gone.`
+          : ""}</p>
+      </div>
+      <div class="chart-scroll v2-panel-gap"><table class="v2-table">
+        <thead><tr><th class="num">#</th><th>Team</th><th class="num">Slots</th><th class="num">Resilience</th><th class="num">Breadth</th><th class="num">Fragility</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>`;
+  }
+
   function renderAll() {
     renderNavigation();
     renderSetup();
     renderAnalyticsControls();
     renderAnalytics();
     renderExposure();
+    renderChartViews();
     updateDiagnosticsBadge();
     saveState();
   }
   function renderNavigation() {
     document.querySelectorAll(".nav-tab").forEach(button => button.classList.toggle("active", button.dataset.view === state.view));
-    els.setupView.hidden = state.view !== "setup";
-    els.analyticsView.hidden = state.view !== "analytics";
-    els.exposureView.hidden = state.view !== "exposure";
-    els.coffeeView.hidden = state.view !== "coffee";
+    for (const id of VIEW_IDS) {
+      document.getElementById(`${id}View`).hidden = state.view !== id;
+    }
   }
   function renderSetup() {
     const configured = configuredMons().length;
@@ -3584,6 +4594,225 @@
       }
     });
 
+    /*
+     * AGGREGATE FIXTURE
+     *
+     * Fire/Flying and Ice/Flying, hand-checked against the type chart. Chosen because the
+     * pair is lopsided in every direction the aggregates care about:
+     *
+     *   Rock hits both for 4x and neither resists it   -> a genuine shared weakness
+     *   only P1 answers Rock                            -> and a single point of failure
+     *   P1 answers all four of P2's weaknesses          -> matrix[1][0] = 4
+     *   P2 answers none of P1's three                   -> matrix[0][1] = 0
+     *
+     * That last pair is the point. A transposed matrix would read 0 and 4 the other way
+     * round and every other assertion here would still pass.
+     */
+    const AGG = [
+      {mon:{type1:"Fire", type2:"Flying", moves:["Fire","Ground",null,null], bring:true}, index:0},
+      {mon:{type1:"Ice",  type2:"Flying", moves:["Ice","Rock",null,null],    bring:true}, index:1}
+    ];
+    const rockIndex = TYPES.indexOf("Rock");
+
+    test("Defence grid exposes resists", "18 rows by one column per member, values straight from the engine", () => {
+      const grid = defenceGrid(AGG);
+      assert(grid.length === 18, `Expected 18 type rows, found ${grid.length}`);
+      assert(grid.every(row => row.length === 2), "A grid row did not have one column per member");
+      // Rock is 2x on Fire and 2x on Flying, and 2x on Ice and 2x on Flying.
+      assert(grid[rockIndex][0] === 4, `Rock on Fire/Flying read ${grid[rockIndex][0]}, expected 4`);
+      assert(grid[rockIndex][1] === 4, `Rock on Ice/Flying read ${grid[rockIndex][1]}, expected 4`);
+      // Steel is ½x on Fire and 1x on Flying. This is the resist calculateTeamSummary omits.
+      const steel = grid[TYPES.indexOf("Steel")];
+      assert(steel[0] === .5, `Steel on Fire/Flying read ${steel[0]}, expected 0.5`);
+      assert(steel[1] === 2, `Steel on Ice/Flying read ${steel[1]}, expected 2`);
+    });
+
+    test("Shared weakness needs nobody resisting", "Two members exposed and no resist or immunity anywhere", () => {
+      const rows = teamRows(AGG);
+      assert(rows.length === 18, `Expected 18 rows, found ${rows.length}`);
+      const rock = rows[rockIndex];
+      assert(rock.weaknessCount === 2, `Rock exposed ${rock.weaknessCount} members, expected 2`);
+      assert(rock.resistCount === 0, `Rock found ${rock.resistCount} resists, expected 0`);
+      assert(rock.shared === true, "Rock is a 4x on both members with no resist and was not flagged shared");
+      // Steel exposes P2 only, and P1 resists it. One resist is an answer, so never shared.
+      const steel = rows[TYPES.indexOf("Steel")];
+      assert(steel.weaknessCount === 1, `Steel exposed ${steel.weaknessCount} members, expected 1`);
+      assert(steel.resistCount === 1, `Steel found ${steel.resistCount} resists, expected 1`);
+      assert(steel.shared === false, "Steel was flagged shared despite a member resisting it");
+      // Only P1's Ground move reaches Rock for 2x, so Rock is the team's single point there.
+      assert(rock.offensiveCount === 1, `Rock had ${rock.offensiveCount} answers, expected 1`);
+      assert(rock.singlePoint === true, "A type with exactly one answer was not flagged a single point");
+      assert(rock.blind === false, "A type with an answer was flagged blind");
+    });
+
+    test("Synergy matrix is not transposed", "Row is the protected member, column is the protector", () => {
+      const rows = teamRows(AGG);
+      const matrix = synergyMatrix(AGG, rows);
+      assert(matrix.length === 2 && matrix[0].length === 2, "Matrix was not N by N");
+      assert(matrix[0][0] === null && matrix[1][1] === null, "The diagonal must be null, not zero");
+      // P2 is weak to Fire, Rock, Electric and Steel. P1's Fire and Ground moves answer all four.
+      assert(matrix[1][0] === 4, `P1 covers ${matrix[1][0]} of P2's weaknesses, expected 4`);
+      // P1 is weak to Water, Electric and Rock. P2's Ice and Rock moves reach none of them at 2x.
+      assert(matrix[0][1] === 0, `P2 covers ${matrix[0][1]} of P1's weaknesses, expected 0`);
+      assert(matrix[1][0] !== matrix[0][1], "The matrix came back symmetric, which means it was transposed or mirrored");
+    });
+
+    test("Contribution separates unique from redundant", "And counts a liability only when the weakness is shared", () => {
+      const rows = teamRows(AGG);
+      const contrib = memberContribution(AGG, rows, defenceGrid(AGG));
+      assert(contrib.length === 2, `Expected one record per member, found ${contrib.length}`);
+      const [p1, p2] = contrib;
+      assert(p1.index === 0 && p2.index === 1, "Contribution records lost their slot identity");
+      assert(p1.totalOffence === p1.uniqueOffence + p1.redundantOffence, "Offence totals do not reconcile");
+      assert(p1.totalDefence === p1.uniqueDefence + p1.redundantDefence, "Defence totals do not reconcile");
+      // Rock and Electric are shared. Water hits only P1, and Fire and Steel hit only P2 with
+      // the other member resisting, so none of those three count against anyone.
+      assert(p1.liabilities === 2, `P1 carried ${p1.liabilities} liabilities, expected 2 (Rock, Electric)`);
+      assert(p2.liabilities === 2, `P2 carried ${p2.liabilities} liabilities, expected 2 (Rock, Electric)`);
+      // Rock is answered by P1 alone, so it must land in unique, never redundant.
+      assert(p1.uniqueOffence >= 1, "P1 answers Rock alone and scored no unique offence");
+      assert(p2.uniqueTotal === p2.uniqueOffence + p2.uniqueDefence, "uniqueTotal does not reconcile");
+    });
+
+    test("Team summaries score higher as better", "And empty teams return nulls rather than a hollow 18", () => {
+      const full = Array.from({length:6}, (_, i) => sanitiseMon(i < 2 ? AGG[i].mon : null));
+      const summaries = teamSummaries([
+        {id:"t1", name:"Pair", mons:full},
+        {id:"t2", name:"Empty", mons:Array.from({length:6}, () => sanitiseMon(null))}
+      ]);
+      const [pair, empty] = summaries;
+      assert(pair.configuredCount === 2, `Expected 2 configured, found ${pair.configuredCount}`);
+      assert(pair.resilience === 18 - 2, `Resilience read ${pair.resilience}, expected 16 (Rock and Electric shared)`);
+      assert(pair.breadth >= 0 && pair.breadth <= 18, `Breadth ${pair.breadth} fell outside 0-18`);
+      assert(pair.fragility >= 1, "Rock is answered by one member, so fragility cannot be zero");
+      assert(empty.configuredCount === 0, "An empty team reported configured members");
+      assert(empty.resilience === null && empty.breadth === null,
+        "An empty team scored a real position, which would plot it as the best team saved");
+    });
+
+    test("Library survives a save and reload", "Named team codes round-trip, and a bad row is dropped not thrown", () => {
+      const good = Engine.encodeTeamCode({mons:sanitiseState({mons:[{type1:"Water", moves:["Water"]}]}).mons});
+      const kept = sanitiseState({library:[
+        {id:"a", name:"Rain", code:good},
+        {id:"b", name:"Broken", code:"not-a-team-code"},
+        {id:"c", name:"   ", code:good},
+        {name:"No id", code:good},
+        "junk",
+        null
+      ]});
+      assert(kept.library.length === 3, `Expected 3 surviving rows, found ${kept.library.length}`);
+      assert(kept.library[0].name === "Rain", `First row lost its name, got ${kept.library[0].name}`);
+      assert(kept.library[1].name === "Untitled team", "A blank name did not fall back");
+      assert(typeof kept.library[2].id === "string" && kept.library[2].id, "A row without an id was not given one");
+      assert(kept.library.every(row => row.code === good), "A surviving row lost its code");
+      // The undecodable row is the point: it must be dropped silently, never thrown.
+      assert(!kept.library.some(row => row.name === "Broken"), "An undecodable code was kept");
+      assert(sanitiseState({}).library.length === 0, "A missing library did not default to empty");
+      assert(sanitiseState({library:"nonsense"}).library.length === 0, "A non-array library was not rejected");
+    });
+
+    test("Library is capped", "The cap holds even when storage arrives over it", () => {
+      const good = Engine.encodeTeamCode({mons:sanitiseState({mons:[{type1:"Water", moves:["Water"]}]}).mons});
+      const over = Array.from({length:LIBRARY_LIMIT + 5}, (_, i) => ({id:`t${i}`, name:`Team ${i}`, code:good}));
+      const kept = sanitiseState({library:over});
+      assert(kept.library.length === LIBRARY_LIMIT, `Cap is ${LIBRARY_LIMIT}, kept ${kept.library.length}`);
+    });
+
+    test("Library decodes for the aggregates", "libraryTeams returns squads that teamSummaries can score", () => {
+      const before = state.library;
+      try {
+        state.library = sanitiseState({library:[{id:"d", name:"Demo", code:DEMO_TEAM_CODE}]}).library;
+        const teams = libraryTeams();
+        assert(teams.length === 1, `Expected 1 decoded team, found ${teams.length}`);
+        assert(teams[0].name === "Demo", "The decoded team lost its name");
+        assert(teams[0].mons.length === 6, `Decoded ${teams[0].mons.length} slots, expected 6`);
+        const summary = teamSummaries(teams)[0];
+        assert(summary.configuredCount === 6, `Demo scored ${summary.configuredCount} configured, expected 6`);
+        assert(summary.resilience >= 0 && summary.resilience <= 18, `Resilience ${summary.resilience} fell outside 0-18`);
+        assert(summary.breadth >= 0 && summary.breadth <= 18, `Breadth ${summary.breadth} fell outside 0-18`);
+      } finally {
+        state.library = before;
+      }
+    });
+
+    test("A v1 squad still loads", "State written by the previous app survives the key change", () => {
+      // Exactly the shape v1 wrote: no library, and a view from its three-tab nav.
+      const kept = sanitiseState({
+        v:1, view:"exposure", analysisMode:"six", displayMode:"moves", chartColour:"move", chartSort:"type",
+        mons:[{type1:"Fire", type2:"Flying", moves:["Fire","Ground",null,null], bring:true}]
+      });
+      assert(kept.mons.length === 6, `A v1 squad came back with ${kept.mons.length} slots`);
+      assert(kept.mons[0].type1 === "Fire" && kept.mons[0].type2 === "Flying", "A v1 typing was lost");
+      assert(JSON.stringify(kept.mons[0].moves) === JSON.stringify(["Fire","Ground",null,null]), "v1 move types were lost");
+      assert(kept.mons[0].bring === true, "A v1 selection flag was lost");
+      assert(kept.view === "exposure", `A v1 view fell back to ${kept.view}`);
+      assert(kept.displayMode === "moves" && kept.chartColour === "move" && kept.chartSort === "type",
+        "v1 view settings were dropped");
+      assert(Array.isArray(kept.library) && kept.library.length === 0, "A v1 state did not gain an empty library");
+      assert(LEGACY_STORAGE_KEY !== STORAGE_KEY, "The legacy key matches the live one, so the migration reads nothing new");
+    });
+
+    test("Plot axes point the right way", "Zero sits left and bottom, the maximum sits right and top", () => {
+      const right = PLOT.left + PLOT_W, bottom = PLOT.top + PLOT_H;
+      assert(plotX(0, 6) === PLOT.left, `plotX(0) landed at ${plotX(0, 6)}, expected the left edge ${PLOT.left}`);
+      assert(plotX(6, 6) === right, `plotX(max) landed at ${plotX(6, 6)}, expected the right edge ${right}`);
+      // SVG y grows downward, so this is the inverted one and the easiest to get backwards.
+      assert(plotY(0, 6) === bottom, `plotY(0) landed at ${plotY(0, 6)}, expected the bottom edge ${bottom}`);
+      assert(plotY(6, 6) === PLOT.top, `plotY(max) landed at ${plotY(6, 6)}, expected the top edge ${PLOT.top}`);
+      // The two readings the whole quadrant story depends on.
+      assert(plotX(0, 6) < plotX(6, 6) && plotY(6, 6) < plotY(0, 6),
+        "A clean matchup no longer plots top-left, so the quadrant labels are now lying");
+      /*
+       * A team with no spread must not divide by zero. Zero still reads as zero: left edge
+       * and bottom edge, the same as it would on any other domain. Anything else would put
+       * an empty team somewhere that looks like a score.
+       */
+      assert(plotX(0, 0) === PLOT.left, `A zero domain sent x to ${plotX(0, 0)}, expected the left edge`);
+      assert(plotY(0, 0) === bottom, `A zero domain sent y to ${plotY(0, 0)}, expected the bottom edge`);
+
+      /*
+       * A point at the maximum sits on the edge, so its bubble overhangs by its own radius.
+       * If an inset were smaller than MAX_BUBBLE, the highest-scoring mark on the plot would
+       * be the one clipped, which is the worst possible thing to lose.
+       */
+      for (const [side, inset] of Object.entries({left:PLOT.left, top:PLOT.top, right:PLOT.right, bottom:PLOT.bottom})) {
+        assert(inset >= MAX_BUBBLE, `The ${side} inset is ${inset}, smaller than a ${MAX_BUBBLE}px bubble`);
+      }
+      // Spreading must never push a mark outside the viewBox either.
+      const corners = [{x:0, y:0, px:PLOT.left, py:bottom}, {x:0, y:0, px:right, py:PLOT.top},
+                       {x:1, y:1, px:right, py:PLOT.top}, {x:1, y:1, px:right, py:PLOT.top}];
+      for (const point of spreadCollisions(corners)) {
+        assert(point.cx >= MAX_BUBBLE && point.cx <= PLOT.w - MAX_BUBBLE, `A spread mark left the plot at x ${point.cx}`);
+        assert(point.cy >= MAX_BUBBLE && point.cy <= PLOT.h - MAX_BUBBLE, `A spread mark left the plot at y ${point.cy}`);
+      }
+    });
+
+    test("Every v2 view renders", "All five draw for a real squad, a single slot and an empty one", () => {
+      const before = state.mons;
+      const beforeLibrary = state.library;
+      try {
+        const cases = {
+          full: Engine.decodeTeamCode(DEMO_TEAM_CODE).mons,
+          single: sanitiseState({mons:[{type1:"Fire", moves:["Fire"]}]}).mons,
+          empty: Array.from({length:6}, () => sanitiseMon(null))
+        };
+        state.library = sanitiseState({library:[{id:"d", name:"Demo", code:DEMO_TEAM_CODE}]}).library;
+        for (const [label, mons] of Object.entries(cases)) {
+          state.mons = mons;
+          const bundle = analysisBundle();
+          for (const view of CHART_VIEWS) {
+            const html = view.render(bundle);
+            assert(typeof html === "string" && html.length > 0, `${view.label} returned nothing for the ${label} squad`);
+            assert(!html.includes("undefined"), `${view.label} rendered the word undefined for the ${label} squad`);
+            assert(!html.includes("NaN"), `${view.label} rendered NaN for the ${label} squad`);
+          }
+        }
+      } finally {
+        state.mons = before;
+        state.library = beforeLibrary;
+      }
+    });
+
     return {ok:tests.every(item => item.ok), tests, assertions};
   }
   function updateDiagnosticsBadge() {
@@ -3664,7 +4893,7 @@
     toastTimer = setTimeout(() => els.toast.classList.remove("show"), actionLabel ? 5200 : 2800);
   }
   function setView(view) {
-    state.view = view === "analytics" || view === "exposure" || view === "coffee" ? view : "setup";
+    state.view = VIEW_IDS.includes(view) ? view : "setup";
     renderAll();
     window.scrollTo({top:0,behavior:"smooth"});
   }
@@ -3802,6 +5031,10 @@
     if (action) {
       const name = action.dataset.action;
       const index = Number(action.dataset.mon);
+      if (name === "library-load") return loadLibraryTeam(action.dataset.team);
+      if (name === "library-rename") return renameLibraryTeam(action.dataset.team);
+      if (name === "library-duplicate") return duplicateLibraryTeam(action.dataset.team);
+      if (name === "library-delete") return deleteLibraryTeam(action.dataset.team);
       if (name === "pick-type") return openTypePicker({monIndex:index,field:action.dataset.field});
       if (name === "pick-move") return openTypePicker({monIndex:index,field:"move",moveIndex:Number(action.dataset.move)});
       if (name === "toggle-bring") return toggleBring(index);
@@ -3840,6 +5073,16 @@
       renderAll();
       return;
     }
+  });
+
+  document.getElementById("libraryButton").addEventListener("click", () => {
+    renderLibrary();
+    els.libraryDialog.showModal();
+    els.libraryNameInput.focus();
+  });
+  document.getElementById("saveTeamButton").addEventListener("click", () => saveCurrentTeam(els.libraryNameInput.value));
+  els.libraryNameInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") { event.preventDefault(); saveCurrentTeam(els.libraryNameInput.value); }
   });
 
   document.getElementById("goAnalyticsButton").addEventListener("click", () => setView("analytics"));
